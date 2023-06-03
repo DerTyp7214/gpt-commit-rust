@@ -1,10 +1,77 @@
 use colored::*;
 use std::process::{Child, Command};
 
-pub fn run_command(command: &str, args: &[String]) -> Result<Child, std::io::Error> {
-    let mut cmd = Command::new(command);
-    cmd.args(args);
-    cmd.spawn()
+pub fn run_commands(commands: &str) {
+    if commands.contains(" && ") {
+        return run_and_commands(commands);
+    }
+
+    if commands.contains(" | ") {
+        return run_pipe_commands(commands);
+    }
+
+    let commands = commands.split('\n');
+    for c in commands {
+        if c.trim() == "" {
+            continue;
+        }
+        run_command(c).unwrap().wait().unwrap();
+    }
+}
+
+fn run_and_commands(commands: &str) {
+    let commands = commands.split(" && ");
+    let mut last_command = None;
+    for c in commands {
+        if c.trim() == "" {
+            continue;
+        }
+        let mut command = run_command(c).unwrap();
+        command.wait().unwrap();
+        last_command = Some(command);
+    }
+    if let Some(mut command) = last_command {
+        command.wait().unwrap();
+    }
+}
+
+fn run_pipe_commands(commands: &str) {
+    let commands = commands.split(" | ");
+    let mut last_command: Option<Child> = None;
+    for c in commands {
+        if c.trim() == "" {
+            continue;
+        }
+        let mut command = run_command(c).unwrap();
+        if let Some(mut last_command) = last_command {
+            last_command.stdout = command.stdout.take();
+            last_command.wait().unwrap();
+        }
+        last_command = Some(command);
+    }
+    if let Some(mut command) = last_command {
+        command.wait().unwrap();
+    }
+}
+
+fn run_command(command: &str) -> Result<Child, std::io::Error> {
+    let mut parts = command.split_whitespace();
+    let cmd = parts.next().unwrap();
+    let args = parts.collect::<Vec<_>>();
+    let args = args
+        .into_iter()
+        .fold::<Vec<String>, _>(vec![], |mut args, arg| match args.last_mut() {
+            Some(last) if last.starts_with('"') => {
+                *last = format!("{} {}", last, arg);
+                args
+            }
+            _ => {
+                args.push(arg.to_owned());
+                args
+            }
+        });
+        args.iter().for_each(|arg| println!("{}", arg));
+    Command::new(cmd).args(args).spawn()
 }
 
 pub fn parse_command(line: &str, new_lines: bool) -> String {

@@ -3,6 +3,21 @@ use git2::{DiffFormat, DiffOptions, Repository, StatusOptions};
 use normpath::{BasePathBuf, PathExt};
 use std::{path::Path, str};
 
+pub fn build_commands(commit_message: String, include_push: bool) -> String {
+    let mut commands = String::new();
+    commands.push_str("git add .");
+    commands.push_str(" && ");
+    commands.push_str("git commit -m");
+    commands.push(' ');
+    commands.push_str(format!("\"{}\"", commit_message).as_str());
+    if include_push {
+        commands.push_str(" && ");
+        commands.push_str("git push");
+    }
+
+    commands
+}
+
 pub struct Git {
     pub repo: Repository,
     _path: String,

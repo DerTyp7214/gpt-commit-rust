@@ -8,10 +8,12 @@ mod utils;
 use std::env;
 
 use colored::Colorize;
-use command_utils::run_command;
 use gpt_api::query;
 
-use crate::{command_utils::parse_command, git::Git};
+use crate::{
+    command_utils::{parse_command, run_commands},
+    git::{build_commands, Git},
+};
 
 #[tokio::main]
 async fn main() {
@@ -35,12 +37,22 @@ async fn main() {
     loader.stop();
 
     let result = match result {
-        Ok(result) => parse_command(&result, true),
+        Ok(result) => build_commands(result, false),
         Err(err) => {
             println!("Error: {}", err);
             return;
         }
     };
 
-    println!("{}", result);
+    let parsed_command = parse_command(&result, true);
+
+    println!("{}\n{}", "Commands:".bright_magenta(), parsed_command);
+    print!("\n{} {}: ", "Confirm".green(), "(Y/n)");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+    if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
+        run_commands(&result);
+    } else {
+        println!("Aborted");
+    }
 }
