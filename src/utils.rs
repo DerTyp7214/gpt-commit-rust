@@ -58,10 +58,17 @@ impl Default for Config {
     }
 }
 
+fn config_path() -> String {
+    let mut dir = std::env::current_exe().unwrap();
+    dir.pop();
+    dir.push(".gpt-commit-rust-config.toml");
+    dir.to_str().unwrap().to_owned()
+}
+
 impl Config {
     pub fn save(&self) {
         let config = toml::to_string(self).unwrap();
-        let mut file = File::create("gpt-commit-rust-config.toml").unwrap();
+        let mut file = File::create(config_path()).unwrap();
         file.write_all(config.as_bytes()).unwrap();
     }
 
@@ -76,7 +83,7 @@ impl Config {
 
 pub fn get_config() -> Config {
     let config =
-        toml::from_str::<Config>(&std::fs::read_to_string("gpt-commit-rust-config.toml").unwrap_or_else(|_| {
+        toml::from_str::<Config>(&std::fs::read_to_string(config_path()).unwrap_or_else(|_| {
             let config = &mut Config::default();
             let api_key = std::env::var("CHAT_GPT_TOKEN");
             if api_key.is_ok() {
