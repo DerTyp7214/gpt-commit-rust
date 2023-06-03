@@ -70,7 +70,6 @@ fn run_command(command: &str) -> Result<Child, std::io::Error> {
                 args
             }
         });
-        args.iter().for_each(|arg| println!("{}", arg));
     Command::new(cmd).args(args).spawn()
 }
 
