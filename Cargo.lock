@@ -239,7 +239,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gpt-cli-rust"
+name = "gpt-commit-rust"
 version = "0.1.0"
 dependencies = [
  "colored",
