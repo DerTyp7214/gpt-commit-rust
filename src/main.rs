@@ -21,6 +21,16 @@ async fn main() {
 
     let args = std::env::args().collect::<Vec<String>>()[1..].to_vec();
 
+    if args.contains(&"--api-key".to_owned()) {
+        let config = &mut utils::get_config();
+        let api_key = args[args.iter().position(|s| s == "--api-key").unwrap() + 1].clone();
+        config.set_api_key(api_key);
+        config.save();
+
+        println!("{}", "API key set".green());
+        return;
+    }
+
     let git = Git::new(env::current_dir().unwrap().to_str().unwrap().to_owned());
 
     if git.is_err() {

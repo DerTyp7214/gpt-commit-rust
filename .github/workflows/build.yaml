@@ -19,7 +19,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         rust: [nightly]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -36,7 +36,7 @@ jobs:
           cargo_toml_folder: './'
 
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --target ${{ matrix.os }}
 
       - name: Create Release Text
         id: release-text

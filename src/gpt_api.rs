@@ -1,11 +1,10 @@
-use std::env;
-
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::git::Git;
 use crate::query_params::build_query;
+use crate::utils;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct OpenApiResponseBody {
@@ -81,6 +80,8 @@ pub async fn query(
     git: Git,
     files: Vec<String>,
 ) -> Result<String, String> {
+    let config = utils::get_config();
+
     let mut messages: Vec<OpenApiMessage> = Vec::new();
     messages.push(OpenApiMessage {
         role: "user".to_owned(),
@@ -104,12 +105,7 @@ pub async fn query(
     let mut headers = HeaderMap::new();
     headers.insert(
         AUTHORIZATION,
-        format!(
-            "Bearer {}",
-            env::var("CHAT_GPT_TOKEN").expect("Invalid token")
-        )
-        .parse()
-        .unwrap(),
+        format!("Bearer {}", config.get_api_key()).parse().unwrap(),
     );
 
     let result = post_api_call(

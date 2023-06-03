@@ -1,4 +1,5 @@
 use std::{
+    fs::File,
     io,
     io::Write,
     sync::{Arc, Mutex},
@@ -6,6 +7,7 @@ use std::{
 };
 
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 
 const FRAMES: [&str; 12] = [
     "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛",
@@ -43,6 +45,49 @@ fn loading_str(line: &str, index: Option<usize>) -> String {
 pub fn terminal_width() -> usize {
     let (width, _) = term_size::dimensions().unwrap_or((80, 24));
     width
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct Config {
+    pub api_key: Option<String>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self { api_key: None }
+    }
+}
+
+impl Config {
+    pub fn save(&self) {
+        let config = toml::to_string(self).unwrap();
+        let mut file = File::create("gpt-commit-rust-config.toml").unwrap();
+        file.write_all(config.as_bytes()).unwrap();
+    }
+
+    pub fn set_api_key(&mut self, api_key: String) {
+        self.api_key = Some(api_key);
+    }
+
+    pub fn get_api_key(&self) -> String {
+        self.api_key.to_owned().unwrap()
+    }
+}
+
+pub fn get_config() -> Config {
+    let config =
+        toml::from_str::<Config>(&std::fs::read_to_string("gpt-commit-rust-config.toml").unwrap_or_else(|_| {
+            let config = &mut Config::default();
+            let api_key = std::env::var("CHAT_GPT_TOKEN");
+            if api_key.is_ok() {
+                let api_key = api_key.unwrap();
+                config.set_api_key(api_key);
+                config.save();
+            }
+            toml::to_string(&config).unwrap()
+        }))
+        .unwrap();
+    config
 }
 
 pub struct Loader {
