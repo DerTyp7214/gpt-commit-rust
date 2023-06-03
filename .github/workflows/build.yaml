@@ -37,7 +37,6 @@ jobs:
           rustup component add llvm-tools-preview
           rustup target add x86_64-pc-windows-gnu
           rustup target add x86_64-pc-windows-msvc
-          rustup update
 
       - name: Set up Rust (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -48,7 +47,7 @@ jobs:
           rustup component add clippy
           rustup component add llvm-tools-preview
           rustup target add x86_64-unknown-linux-gnu
-          rustup update
+          rustup target add x86_64-unknown-linux-musl
 
       - name: Set up Rust (macOS)
         if: matrix.os == 'macos-latest'
@@ -59,7 +58,6 @@ jobs:
           rustup component add clippy
           rustup component add llvm-tools-preview
           rustup target add x86_64-apple-darwin
-          rustup update
 
       - name: Get app version
         id: get_version
@@ -68,7 +66,7 @@ jobs:
           cargo_toml_folder: './'
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.os }}
+        run: cargo build --release
 
       - name: Create Release Text
         id: release-text
