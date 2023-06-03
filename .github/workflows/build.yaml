@@ -10,7 +10,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: 'pages'
+  group: 'build-and-release'
   cancel-in-progress: true
 
 jobs:
