@@ -21,6 +21,32 @@ async fn main() {
 
     let args = std::env::args().collect::<Vec<String>>()[1..].to_vec();
 
+    if args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned()) {
+        println!(
+            "{} {}\n\n{}",
+            "Usage:",
+            parse_command("gpt-commit-rust [optional:option] [optional:files]", false),
+            "Options:".bright_blue()
+        );
+        println!("{} {}", "--help, -h:".magenta(), "Shows this help message");
+        println!(
+            "{} {}",
+            "--push, -p:".magenta(),
+            "Pushes the changes to the remote repository after running the commands"
+        );
+        println!(
+            "{} {}",
+            "--api-key:".magenta(),
+            "Sets the API key to use for GPT-3. You can also set the API key in the .env file"
+        );
+        println!(
+            "{} {}",
+            "--clear-api-key:".magenta(),
+            "Clears the API key from the config file"
+        );
+        return;
+    }
+
     if args.contains(&"--api-key".to_owned()) {
         let config = &mut utils::get_config();
         let api_key = args[args.iter().position(|s| s == "--api-key").unwrap() + 1].clone();

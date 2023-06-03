@@ -132,5 +132,5 @@ jobs:
         with:
           files: |
             output/gpt-commit-rust*
-          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}-${{ matrix.os }}
+          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}-${{ runner.os }}
           body_path: release.md
