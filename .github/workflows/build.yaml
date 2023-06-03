@@ -13,6 +13,9 @@ concurrency:
   group: 'build-and-release'
   cancel-in-progress: true
 
+env:
+    CARGO_TERM_COLOR: always
+
 jobs:
   build:
     strategy:
@@ -23,11 +26,43 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+        
       - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
+        run: |
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${{ matrix.rust }}
+            export PATH="$HOME/.cargo/bin:$PATH"
+            rustup component add rustfmt
+            rustup component add clippy
+            rustup target add x86_64-pc-windows-gnu
+            rustup target add x86_64-apple-darwin
+            rustup target add x86_64-unknown-linux-gnu
+            rustup target add x86_64-unknown-linux-musl
+            rustup target add aarch64-unknown-linux-gnu
+            rustup target add aarch64-unknown-linux-musl
+            rustup target add armv7-unknown-linux-gnueabihf
+            rustup target add armv7-unknown-linux-musleabihf
+            rustup target add armv7-unknown-linux-gnueabi
+            rustup target add armv7-unknown-linux-musleabi
+            rustup target add arm-unknown-linux-gnueabihf
+            rustup target add arm-unknown-linux-musleabihf
+            rustup target add arm-unknown-linux-gnueabi
+            rustup target add arm-unknown-linux-musleabi
+            rustup target add i686-unknown-linux-gnu
+            rustup target add i686-unknown-linux-musl
+            rustup target add i686-pc-windows-gnu
+            rustup target add i686-pc-windows-msvc
+            rustup target add i686-apple-darwin
+            rustup target add x86_64-unknown-freebsd
+            rustup target add x86_64-unknown-netbsd
+            rustup target add x86_64-unknown-openbsd
+            rustup target add x86_64-unknown-dragonfly
+            rustup target add x86_64-unknown-bitrig
+            rustup target add x86_64-unknown-haiku
+            rustup target add x86_64-unknown-solaris
+            rustup target add x86_64-unknown-l4re-uclibc
+            rustup target add x86_64-unknown-redox
+            rustup target add x86_64-unknown-hermit
+            rustup
 
       - name: Get app version
         id: get_version
