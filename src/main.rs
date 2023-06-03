@@ -31,6 +31,25 @@ async fn main() {
         return;
     }
 
+    if args.contains(&"--clear-api-key".to_owned()) {
+        let config = &mut utils::get_config();
+        config.set_api_key("".to_owned());
+        config.save();
+
+        println!("{}", "API key cleared".green());
+        return;
+    }
+
+    let mut push = false;
+    if args.contains(&"--push".to_owned()) || args.contains(&"-p".to_owned()) {
+        push = true;
+    }
+
+    let args = args
+        .into_iter()
+        .filter(|s| s != "--push" && s != "-p")
+        .collect::<Vec<String>>();
+
     let git = Git::new(env::current_dir().unwrap().to_str().unwrap().to_owned());
 
     if git.is_err() {
@@ -63,6 +82,9 @@ async fn main() {
     println!("");
     if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
         run_commands(&result);
+        if push {
+            run_commands("git push");
+        }
     } else {
         println!("Aborted");
     }
