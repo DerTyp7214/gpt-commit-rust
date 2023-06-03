@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ matrix.rust }}
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Set up Rust (Windows)
@@ -76,8 +76,8 @@ jobs:
           fi
 
       - name: Get app version (Windows)
-        if: matrix.os == 'windows_latest'
-        id: get_version-windows
+        if: matrix.os == 'windows-latest'
+        id: get_version_windows
         run: |
           if exist Cargo.toml (
             for /f "tokens=2 delims=\" %%a in ('findstr /m /c:"version" Cargo.toml') do set "app_version=%%a"
@@ -109,5 +109,5 @@ jobs:
         with:
           files: |
             target/release/gpt-commit-rust*
-          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version-windows.outputs.app_version }}-${{ matrix.os }}
+          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}-${{ matrix.os }}
           body_path: release.md
