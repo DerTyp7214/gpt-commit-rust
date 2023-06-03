@@ -2,6 +2,9 @@ name: Build and Release
 
 on:
   push:
+    paths:
+      - '!.github/workflows/**'
+      - '!.gitingore'
   workflow_dispatch:
 
 permissions:
@@ -98,25 +101,36 @@ jobs:
       - name: Build
         run: cargo build --release
 
+      - name: Move binary to output directory (Linux/macOS)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        run: |
+          mkdir -p output
+          mv target/release/gpt-commit-rust output/gpt-commit-rust
+
+      - name: Move binary to output directory (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mkdir output
+          mv target/release/gpt-commit-rust.exe output/gpt-commit-rust.exe
+
       - name: Create Release Text (Linux/macOS)
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           body="## Commits\n"
-          body+=$(git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          body+=$(git log $(git describe --tags --match="*-${{ matrix.os }}" --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           echo -e $body >> release.md
 
       - name: Create Release Text (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           $body = "## Commits`n"
-          $body += git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)' 
-          Set-Content -Path release.md -Value $body
-          Write-Host "Release text saved to: release.md"
+          $body += $(git log $(git describe --tags --match="*-${{ matrix.os }}" --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          Set-Content -Path "release.md" -Value $body
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            target/release/gpt-commit-rust*
+            output/gpt-commit-rust*
           tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}-${{ matrix.os }}
           body_path: release.md
