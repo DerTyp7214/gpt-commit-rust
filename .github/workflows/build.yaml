@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
       - name: Set up Rust (Windows)
@@ -79,20 +79,19 @@ jobs:
         if: matrix.os == 'windows-latest'
         id: get_version_windows
         run: |
-          if exist Cargo.toml (
-            for /f "tokens=2 delims=\" %%a in ('findstr /m /c:"version" Cargo.toml') do set "app_version=%%a"
-            set "app_version=%app_version:"=%"
-            set "app_version=%app_version:-=.%"
-            set "app_version=%app_version:~0,-1%"
-            set "app_version=%app_version:~1%"
-            set "app_version=%app_version:.=.%"
-            set "app_version=%app_version:~0,-1%"
-            set "app_version=%app_version:~1%"
-            set "app_version=%app_version:.=.%"
-            set "app_version=%app_version:~0,-1%"
-            set "app_version=%app_version:~1%"
-            echo app_version=%app_version% >> %GITHUB_OUTPUT%
-          )
+          $file = "Cargo.toml"
+          $content = Get-Content $file -Raw
+
+          $regexPattern = 'version\s*=\s*"(.+?)"'
+          $match = [regex]::Match($content, $regexPattern)
+
+          if ($match.Success) {
+              $version = $match.Groups[1].Value
+              $env:GITHUB_OUTPUT = $version
+              Write-Host "Version: $version"
+          } else {
+              Write-Host "Version not found."
+          }
 
       - name: Build
         run: cargo build --release
