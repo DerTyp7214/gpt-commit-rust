@@ -5,7 +5,7 @@ mod os_info;
 mod query_params;
 mod utils;
 
-use std::env;
+use std::{env, io::Write};
 
 use colored::Colorize;
 use gpt_api::query;
@@ -13,6 +13,7 @@ use gpt_api::query;
 use crate::{
     command_utils::{parse_command, run_commands},
     git::{build_commands, Git},
+    utils::terminal_width,
 };
 
 #[tokio::main]
@@ -46,10 +47,13 @@ async fn main() {
 
     let parsed_command = parse_command(&result, true);
 
+    std::io::stdout().flush().unwrap();
     println!("{}\n{}", "Commands:".bright_magenta(), parsed_command);
-    print!("\n{} {}: ", "Confirm".green(), "(Y/n)");
+    print!("\n\r{} {}: ", "Confirm".green(), "(Y/n)");
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
+    print!("\r{}", " ".repeat(terminal_width()));
+    print!("\r");
     if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
         run_commands(&result);
     } else {

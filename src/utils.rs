@@ -40,7 +40,7 @@ fn loading_str(line: &str, index: Option<usize>) -> String {
     line.replace("[ ]", FRAMES[f_index])
 }
 
-fn terminal_width() -> usize {
+pub fn terminal_width() -> usize {
     let (width, _) = term_size::dimensions().unwrap_or((80, 24));
     width
 }
