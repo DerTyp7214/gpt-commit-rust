@@ -28,6 +28,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Cache .cargo directory
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}
+          restore-keys: ${{ runner.os }}-cargo-
+
       - name: Set up Rust (Windows)
         if: matrix.os == 'windows-latest'
         run: |
@@ -60,11 +67,32 @@ jobs:
           rustup component add llvm-tools-preview
           rustup target add x86_64-apple-darwin
 
-      - name: Get app version
-        id: get_version
-        uses: dante-signal31/rust-app-version@v1.2.0
-        with:
-          cargo_toml_folder: './'
+      - name: Get app version (Linux/macOS)
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        id: get_version_unix
+        run: |
+          if [ -f "Cargo.toml" ]; then
+            echo "app_version=$(grep -m1 version Cargo.toml | cut -d\" -f2)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get app version (Windows)
+        if: matrix.os == 'windows_latest'
+        id: get_version-windows
+        run: |
+          if exist Cargo.toml (
+            for /f "tokens=2 delims=\" %%a in ('findstr /m /c:"version" Cargo.toml') do set "app_version=%%a"
+            set "app_version=%app_version:"=%"
+            set "app_version=%app_version:-=.%"
+            set "app_version=%app_version:~0,-1%"
+            set "app_version=%app_version:~1%"
+            set "app_version=%app_version:.=.%"
+            set "app_version=%app_version:~0,-1%"
+            set "app_version=%app_version:~1%"
+            set "app_version=%app_version:.=.%"
+            set "app_version=%app_version:~0,-1%"
+            set "app_version=%app_version:~1%"
+            echo app_version=%app_version% >> %GITHUB_OUTPUT%
+          )
 
       - name: Build
         run: cargo build --release
@@ -81,5 +109,5 @@ jobs:
         with:
           files: |
             target/release/gpt-commit-rust*
-          tag_name: v${{ steps.get_version.outputs.app_version }}-${{ matrix.os }}
+          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version-windows.outputs.app_version }}-${{ matrix.os }}
           body_path: release.md
