@@ -111,7 +111,11 @@ async fn main() {
         if push {
             run_commands("git push");
         }
-    } else {
-        println!("Aborted");
+        std::process::exit(0);
+    } else if input.trim() == "n" || input.trim() == "N" {
+        println!("{}", "Aborted".red());
+        std::process::exit(0);
     }
+    println!("{}", "Invalid input".red());
+    std::process::exit(1);
 }
