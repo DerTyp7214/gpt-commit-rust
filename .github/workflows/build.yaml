@@ -3,9 +3,9 @@ name: Build and Release
 on:
   push:
     paths:
-      - '*'
-      - '!.github/workflows/**'
-      - '!.gitingore'
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
   workflow_dispatch:
 
 permissions:
