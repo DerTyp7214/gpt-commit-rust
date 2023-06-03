@@ -88,7 +88,7 @@ jobs:
           if ($match.Success) {
               $version = $match.Groups[1].Value
               $outputFilePath = $env:GITHUB_OUTPUT
-              $version | Out-File -FilePath $outputFilePath
+              Set-Content -Path $outputFilePath -Value $version
               Write-Host "Version saved to: $outputFilePath"
           } else {
               Write-Host "Version not found."
@@ -108,7 +108,7 @@ jobs:
         run: |
           $body = "## Commits`n"
           $body += git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)' 
-          $body | Out-File -FilePath release.md
+          Set-Content -Path release.md -Value $body
           Write-Host "Release text saved to: release.md"
 
       - name: Create Release
