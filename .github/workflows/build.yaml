@@ -3,6 +3,7 @@ name: Build and Release
 on:
   push:
     paths:
+      - '*'
       - '!.github/workflows/**'
       - '!.gitingore'
   workflow_dispatch:
