@@ -87,6 +87,7 @@ jobs:
 
           if ($match.Success) {
               $version = $match.Groups[1].Value
+              $version = "app_version=$version"
               $outputFilePath = $env:GITHUB_OUTPUT
               Set-Content -Path $outputFilePath -Value $version
               Write-Host "Version saved to: $outputFilePath"
