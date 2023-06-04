@@ -25,6 +25,7 @@ Options:
 --help, -h: Shows the help message.
 --version, -v: Shows the current version of the program.
 --update, -u: Updates the program to the latest version.
+--force-update, -f: Forces the update to the latest version.
 --push, -p: Pushes the changes to the remote repository after running the commands.
 --api-key: Sets the API key to use for GPT-3. You can also set the API key in the .env file.
 --clear-api-key: Clears the API key from the config file.

@@ -46,6 +46,11 @@ async fn main() {
         );
         println!(
             "{} {}",
+            "--force-update, -f:".magenta(),
+            "Forces the update to the latest version"
+        );
+        println!(
+            "{} {}",
             "--push, -p:".magenta(),
             "Pushes the changes to the remote repository after running the commands"
         );
@@ -69,6 +74,15 @@ async fn main() {
             println!("{}", "No update available".yellow());
             return;
         }
+        let result = utils::download_update().await;
+        match result {
+            Ok(_) => println!("{}", "Updated successfully".bright_green()),
+            Err(err) => println!("{} {}", "Error:".red(), err),
+        }
+        return;
+    }
+
+    if args.contains(&"--force-update".to_owned()) || args.contains(&"-f".to_owned()) {
         let result = utils::download_update().await;
         match result {
             Ok(_) => println!("{}", "Updated successfully".bright_green()),
