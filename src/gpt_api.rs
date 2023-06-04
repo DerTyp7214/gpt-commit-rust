@@ -1,3 +1,4 @@
+use colored::Colorize;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -116,7 +117,8 @@ pub async fn query(
     .await;
 
     if let Err(err) = result {
-        return Err(format!("Error: {}", err));
+        println!("Error: {}", err.red());
+        std::process::exit(0);
     }
 
     let json = serde_json::from_str::<OpenApiResponseBody>(&result.unwrap());

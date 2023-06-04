@@ -58,8 +58,9 @@ impl Git {
         let paths: Vec<String> = files.clone().unwrap_or(vec![]);
         let paths: Vec<BasePathBuf> = paths
             .iter()
-            .map(|entry| Path::new(entry).normalize().unwrap())
-            .into_iter()
+            .map(|entry| Path::new(entry).normalize())
+            .filter(|entry| entry.is_ok())
+            .map(|entry| entry.unwrap())
             .collect();
 
         let mut patch_file = String::new();
