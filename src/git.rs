@@ -4,6 +4,12 @@ use normpath::{BasePathBuf, PathExt};
 use std::{path::Path, str};
 
 pub fn build_commands(commit_message: String, include_push: bool) -> String {
+    let mut commit_message = commit_message;
+
+    if commit_message.starts_with("\"") && commit_message.ends_with("\"") {
+        commit_message = commit_message[1..commit_message.len() - 1].to_owned();
+    }
+
     let mut commands = String::new();
     commands.push_str("git add .");
     commands.push_str(" && ");

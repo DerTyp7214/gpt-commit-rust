@@ -238,12 +238,6 @@ pub async fn check_for_update() -> bool {
     let toml = toml::from_str::<CargoToml>(&update);
 
     if toml.is_err() {
-        println!("{}", update);
-        println!(
-            "{} {}",
-            "Failed to check for update.".red(),
-            toml.err().unwrap()
-        );
         return false;
     }
 
