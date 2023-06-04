@@ -114,27 +114,12 @@ jobs:
           mkdir output
           mv target/release/gpt-commit-rust.exe output/gpt-commit-rust-${{ runner.os }}.exe
 
-      - name: Create Release Text (Linux/macOS)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: |
-          body="## Commits\n"
-          body+=$(git log $(git describe --tags --match="v*" --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
-          echo -e $body >> release.md
-
-      - name: Create Release Text (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          $body = "## Commits`n"
-          $body += $(git log $(git describe --tags --match="v*" --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
-          Set-Content -Path "release.md" -Value $body
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             output/gpt-commit-rust*
           tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}
-          body_path: release.md
   update:
     needs: build
     runs-on: ubuntu-latest
@@ -149,9 +134,16 @@ jobs:
             echo "app_version=$(grep -m1 version Cargo.toml | cut -d\" -f2)" >> $GITHUB_OUTPUT
           fi
 
+      - name: Create Release Text
+        run: |
+          body="## Commits\n"
+          body+=$(git log $(git tag --list "v*" | grep -v "v${{ steps.get_version.outputs.app_version }}" | sort -V | tail -n 1)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          echo -e $body >> release.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             Cargo.toml
           tag_name: v${{ steps.get_version.outputs.app_version }}
+          body_path: release.md
