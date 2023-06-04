@@ -36,6 +36,11 @@ async fn main() {
         println!("{} {}", "--help, -h:".magenta(), "Shows this help message");
         println!(
             "{} {}",
+            "--version, -v:".magenta(),
+            "Shows the current version of the program"
+        );
+        println!(
+            "{} {}",
             "--update, -u:".magenta(),
             "Updates the program to the latest version"
         );
@@ -69,6 +74,15 @@ async fn main() {
             "Update ready".bright_green(),
             update_message
         );
+    }
+
+    if args.contains(&"--version".to_owned()) || args.contains(&"-v".to_owned()) {
+        println!(
+            "{} {}",
+            "Version:".bright_magenta(),
+            env!("CARGO_PKG_VERSION")
+        );
+        return;
     }
 
     if args.contains(&"--update".to_owned()) || args.contains(&"-u".to_owned()) {
