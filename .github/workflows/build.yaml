@@ -141,5 +141,6 @@ jobs:
         with:
           files: |
             output/gpt-commit-rust*
+            Cargo.toml
           tag_name: latest-${{ runner.os }}
           body_path: release.md
