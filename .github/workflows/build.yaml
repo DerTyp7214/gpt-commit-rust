@@ -133,14 +133,6 @@ jobs:
         with:
           files: |
             output/gpt-commit-rust*
-          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}
-          body_path: release.md
-
-      - name: Create Release (latest)
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            output/gpt-commit-rust*
             Cargo.toml
-          tag_name: latest
+          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}
           body_path: release.md

@@ -128,11 +128,11 @@ pub fn get_executable_name() -> String {
 
 pub async fn download_update() -> Result<(), String> {
     let update_url = if cfg!(windows) {
-        "https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest/gpt-commit-rust-Windows.exe"
+        "https://github.com/DerTyp7214/gpt-commit-rust/releases/latest/download/gpt-commit-rust-Windows.exe"
     } else if cfg!(target_os = "macos") {
-        "https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest/gpt-commit-rust-Linux"
+        "https://github.com/DerTyp7214/gpt-commit-rust/releases/latest/download/gpt-commit-rust-Linux"
     } else if cfg!(target_os = "linux") {
-        "https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest/gpt-commit-rust-macOS"
+        "https://github.com/DerTyp7214/gpt-commit-rust/releases/latest/download/gpt-commit-rust-macOS"
     } else {
         return Err("Unsupported OS".to_owned());
     };
@@ -226,7 +226,7 @@ pub async fn check_for_update() -> bool {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
 
     let update_url =
-        "https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest/Cargo.toml";
+        "https://github.com/DerTyp7214/gpt-commit-rust/releases/latest/download/Cargo.toml";
 
     let update = reqwest::get(update_url)
         .await
