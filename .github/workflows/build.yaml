@@ -106,26 +106,26 @@ jobs:
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           mkdir -p output
-          mv target/release/gpt-commit-rust output/gpt-commit-rust
+          mv target/release/gpt-commit-rust output/gpt-commit-rust-${{ runner.os }}
 
       - name: Move binary to output directory (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           mkdir output
-          mv target/release/gpt-commit-rust.exe output/gpt-commit-rust.exe
+          mv target/release/gpt-commit-rust.exe output/gpt-commit-rust-${{ runner.os }}.exe
 
       - name: Create Release Text (Linux/macOS)
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           body="## Commits\n"
-          body+=$(git log $(git describe --tags --match="v*-${{ runner.os }}" --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          body+=$(git log $(git describe --tags --match="v*" --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           echo -e $body >> release.md
 
       - name: Create Release Text (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           $body = "## Commits`n"
-          $body += $(git log $(git describe --tags --match="v*-${{ runner.os }}" --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          $body += $(git log $(git describe --tags --match="v*" --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           Set-Content -Path "release.md" -Value $body
 
       - name: Create Release (tagged)
@@ -133,7 +133,7 @@ jobs:
         with:
           files: |
             output/gpt-commit-rust*
-          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}-${{ runner.os }}
+          tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}
           body_path: release.md
 
       - name: Create Release (latest)
@@ -142,5 +142,5 @@ jobs:
           files: |
             output/gpt-commit-rust*
             Cargo.toml
-          tag_name: latest-${{ runner.os }}
+          tag_name: latest
           body_path: release.md

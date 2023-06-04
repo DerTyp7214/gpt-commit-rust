@@ -128,11 +128,11 @@ pub fn get_executable_name() -> String {
 
 pub async fn download_update() -> Result<(), String> {
     let update_url = if cfg!(windows) {
-        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-Windows/gpt-commit-rust.exe")
+        "https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest/gpt-commit-rust-Windows.exe"
     } else if cfg!(target_os = "macos") {
-        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-Linux/gpt-commit-rust")
+        "https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest/gpt-commit-rust-Linux"
     } else if cfg!(target_os = "linux") {
-        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-macOS/gpt-commit-rust")
+        "https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest/gpt-commit-rust-macOS"
     } else {
         return Err("Unsupported OS".to_owned());
     };
@@ -144,7 +144,7 @@ pub async fn download_update() -> Result<(), String> {
     };
     let client = reqwest::Client::new();
     let update = client
-        .get(&update_url)
+        .get(update_url)
         .send()
         .await
         .or(Err(
@@ -202,7 +202,7 @@ pub async fn download_update() -> Result<(), String> {
     if cfg!(unix) {
         Command::new("chmod")
             .arg("+x")
-            .arg(update_file_path.to_owned().as_mut_os_str())
+            .arg(update_file_path.to_owned().as_os_str())
             .spawn()
             .unwrap()
             .wait()
@@ -225,17 +225,10 @@ struct CargoToml {
 pub async fn check_for_update() -> bool {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-    let update_url = if cfg!(windows) {
-        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-Windows/Cargo.toml")
-    } else if cfg!(target_os = "macos") {
-        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-Linux/Cargo.toml")
-    } else if cfg!(target_os = "linux") {
-        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-macOS/Cargo.toml")
-    } else {
-        return false;
-    };
+    let update_url =
+        "https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest/Cargo.toml";
 
-    let update = reqwest::get(&update_url)
+    let update = reqwest::get(update_url)
         .await
         .unwrap()
         .text()
