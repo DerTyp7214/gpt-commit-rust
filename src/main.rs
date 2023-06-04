@@ -112,8 +112,9 @@ async fn main() {
         return;
     }
 
+    let config = &mut utils::get_config();
+
     if args.contains(&"--api-key".to_owned()) {
-        let config = &mut utils::get_config();
         let pos = args.iter().position(|s| s == "--api-key").unwrap();
         if pos + 1 >= args.len() {
             let api_key = config.get_api_key();
@@ -130,10 +131,12 @@ async fn main() {
 
         println!("{}", "API key set".green());
         return;
+    } else if config.get_api_key().is_empty() {
+        println!("{}", "No API key set. Set API key first!".yellow());
+        return;
     }
 
     if args.contains(&"--clear-api-key".to_owned()) {
-        let config = &mut utils::get_config();
         config.set_api_key("".to_owned());
         config.save();
 
