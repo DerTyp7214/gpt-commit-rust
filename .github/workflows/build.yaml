@@ -137,7 +137,7 @@ jobs:
       - name: Create Release Text
         run: |
           body="## Commits\n"
-          body+=$(git log $(git tag --list "v*" | grep -v "v${{ steps.get_version.outputs.app_version }}" | sort -V | tail -n 1)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          body+=$(git log $(git describe --tags --exclude="v${{ steps.get_version.outputs.app_version }}" --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           echo -e $body >> release.md
 
       - name: Create Release
