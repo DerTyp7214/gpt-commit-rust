@@ -128,7 +128,7 @@ jobs:
           $body += $(git log $(git describe --tags --match="v*" --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           Set-Content -Path "release.md" -Value $body
 
-      - name: Create Release (tagged)
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
@@ -149,7 +149,7 @@ jobs:
             echo "app_version=$(grep -m1 version Cargo.toml | cut -d\" -f2)" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create Release (tagged)
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
