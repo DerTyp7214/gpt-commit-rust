@@ -13,6 +13,7 @@ use gpt_api::query;
 use crate::{
     command_utils::{parse_command, run_commands},
     git::{build_commands, Git},
+    utils::{check_for_update, get_executable_name},
 };
 
 #[tokio::main]
@@ -22,13 +23,22 @@ async fn main() {
     let args = std::env::args().collect::<Vec<String>>()[1..].to_vec();
 
     if args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned()) {
+        let usage_str = format!(
+            "{} [optional:option] [optional:files]",
+            get_executable_name()
+        );
         println!(
             "{} {}\n\n{}",
             "Usage:",
-            parse_command("gpt-commit-rust [optional:option] [optional:files]", false),
+            parse_command(usage_str.as_str(), false),
             "Options:".bright_blue()
         );
         println!("{} {}", "--help, -h:".magenta(), "Shows this help message");
+        println!(
+            "{} {}",
+            "--update, -u:".magenta(),
+            "Updates the program to the latest version"
+        );
         println!(
             "{} {}",
             "--push, -p:".magenta(),
@@ -47,9 +57,46 @@ async fn main() {
         return;
     }
 
+    let update_ready = check_for_update().await;
+
+    if update_ready {
+        let update_message = parse_command(
+            format!("{} --update", get_executable_name()).as_str(),
+            false,
+        );
+        println!(
+            "{} Run `{}` to update",
+            "Update ready".bright_green(),
+            update_message
+        );
+    }
+
+    if args.contains(&"--update".to_owned()) || args.contains(&"-u".to_owned()) {
+        if !update_ready {
+            println!("{}", "No update available".yellow());
+            return;
+        }
+        let result = utils::download_update().await;
+        match result {
+            Ok(_) => println!("{}", "Updated successfully".bright_green()),
+            Err(err) => println!("{} {}", "Error:".red(), err),
+        }
+        return;
+    }
+
     if args.contains(&"--api-key".to_owned()) {
         let config = &mut utils::get_config();
-        let api_key = args[args.iter().position(|s| s == "--api-key").unwrap() + 1].clone();
+        let pos = args.iter().position(|s| s == "--api-key").unwrap();
+        if pos + 1 >= args.len() {
+            let api_key = config.get_api_key();
+            if api_key.is_empty() {
+                println!("{}", "No API key set".yellow());
+            } else {
+                println!("{}: {}", "API key".bright_magenta(), api_key);
+            }
+            return;
+        }
+        let api_key = args[pos + 1].clone();
         config.set_api_key(api_key);
         config.save();
 

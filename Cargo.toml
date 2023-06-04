@@ -1,17 +1,19 @@
 [package]
 name = "gpt-commit-rust"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
 colored = "2.0.0"
 dotenv = "0.15.0"
+futures-util = "0.3.28"
 git2 = "0.17.2"
+indicatif = { version = "0.17.5", features = ["improved_unicode"] }
 lazy_static = "1.4.0"
 normpath = "1.1.1"
 os-version = "0.2.0"
 regex = "1.8.3"
-reqwest = { version = "0.11.18", features = ["blocking", "json", "serde_json"] }
+reqwest = { version = "0.11.18", features = ["blocking", "json", "serde_json", "stream"] }
 serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"
 term_size = "0.3.2"

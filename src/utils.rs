@@ -1,11 +1,16 @@
+use colored::Colorize;
+use futures_util::StreamExt;
 use std::{
     fs::File,
-    io,
     io::Write,
+    io::{self},
+    path::{Path, PathBuf},
+    process::Command,
     sync::{Arc, Mutex},
     time::Duration,
 };
 
+use indicatif::{ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
@@ -58,16 +63,26 @@ impl Default for Config {
     }
 }
 
-fn config_path() -> String {
+fn app_dir() -> PathBuf {
     let mut dir = std::env::current_exe().unwrap();
     dir.pop();
-    dir.push(".gpt-commit-rust-config.toml");
+    dir.push(".gpt-commit-rust");
+    dir
+}
+
+fn config_path() -> String {
+    let mut dir = app_dir();
+    dir.push("config.toml");
     dir.to_str().unwrap().to_owned()
 }
 
 impl Config {
     pub fn save(&self) {
         let config = toml::to_string(self).unwrap();
+        let dir = app_dir();
+        if !dir.exists() {
+            std::fs::create_dir_all(&dir).unwrap();
+        }
         let mut file = File::create(config_path()).unwrap();
         file.write_all(config.as_bytes()).unwrap();
     }
@@ -77,7 +92,11 @@ impl Config {
     }
 
     pub fn get_api_key(&self) -> String {
-        self.api_key.to_owned().unwrap()
+        self.api_key.to_owned().unwrap_or(
+            std::env::var("CHAT_GPT_TOKEN")
+                .unwrap_or_else(|_| "".to_owned())
+                .to_owned(),
+        )
     }
 }
 
@@ -95,6 +114,121 @@ pub fn get_config() -> Config {
         }))
         .unwrap();
     config
+}
+
+pub fn get_executable_name() -> String {
+    std::env::current_exe()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned()
+}
+
+pub async fn download_update() -> Result<(), String> {
+    let update_url = if cfg!(windows) {
+        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-Windows/gpt-commit-rust.exe")
+    } else if cfg!(target_os = "macos") {
+        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-Linux/gpt-commit-rust")
+    } else if cfg!(target_os = "linux") {
+        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-macOS/gpt-commit-rust")
+    } else {
+        return Err("Unsupported OS".to_owned());
+    };
+
+    let update_file_path = if cfg!(windows) {
+        Path::new(app_dir().as_os_str()).join("gpt-commit-rust-update.exe")
+    } else {
+        Path::new(app_dir().as_os_str()).join("gpt-commit-rust-update")
+    };
+    let client = reqwest::Client::new();
+    let update = client
+        .get(&update_url)
+        .send()
+        .await
+        .or(Err(
+            "Failed to download update. Please try again later or download the update manually.",
+        ))
+        .unwrap();
+
+    let total_size = update.content_length().unwrap();
+
+    let progress_bar = ProgressBar::new(total_size);
+    progress_bar.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+        .unwrap().progress_chars("#>-"));
+    progress_bar.set_message("Downloading update");
+
+    let mut downloaded = 0;
+    let mut stream = update.bytes_stream();
+    let mut update_file = File::create(update_file_path.to_owned()).unwrap();
+
+    while let Some(item) = stream.next().await {
+        let item = item.unwrap();
+        downloaded += item.len();
+        progress_bar.set_position(downloaded as u64);
+        update_file.write_all(&item).unwrap();
+    }
+
+    progress_bar.finish();
+
+    if cfg!(unix) {
+        Command::new("chmod")
+            .arg("+x")
+            .arg(update_file_path.to_owned().as_mut_os_str())
+            .spawn()
+            .unwrap()
+            .wait()
+            .unwrap();
+    }
+
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct CargoPackage {
+    version: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CargoToml {
+    package: CargoPackage,
+}
+
+pub async fn check_for_update() -> bool {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+    let update_url = if cfg!(windows) {
+        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-Windows/Cargo.toml")
+    } else if cfg!(target_os = "macos") {
+        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-Linux/Cargo.toml")
+    } else if cfg!(target_os = "linux") {
+        format!("https://github.com/DerTyp7214/gpt-commit-rust/releases/download/latest-macOS/Cargo.toml")
+    } else {
+        return false;
+    };
+
+    let update = reqwest::get(&update_url)
+        .await
+        .unwrap()
+        .text()
+        .await
+        .unwrap();
+
+    let toml = toml::from_str::<CargoToml>(&update);
+
+    if toml.is_err() {
+        println!("{}", update);
+        println!(
+            "{} {}",
+            "Failed to check for update.".red(),
+            toml.err().unwrap()
+        );
+        return false;
+    }
+
+    let toml = toml.unwrap();
+
+    toml.package.version != VERSION
 }
 
 pub struct Loader {

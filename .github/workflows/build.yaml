@@ -128,7 +128,7 @@ jobs:
           $body += $(git log $(git describe --tags --match="*-${{ matrix.os }}" --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           Set-Content -Path "release.md" -Value $body
 
-      - name: Create Release (${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }})
+      - name: Create Release (tagged)
         uses: softprops/action-gh-release@v1
         with:
           files: |
