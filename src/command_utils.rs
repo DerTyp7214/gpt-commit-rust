@@ -69,7 +69,10 @@ fn run_command(command: &str) -> Result<Child, std::io::Error> {
                 args.push(arg.to_owned());
                 args
             }
-        });
+        })
+        .into_iter()
+        .map(|arg| arg.replace("\"", ""))
+        .collect::<Vec<_>>();
     Command::new(cmd).args(args).spawn()
 }
 
