@@ -1,7 +1,7 @@
 use colored::Colorize;
 use futures_util::StreamExt;
 use std::{
-    fs::File,
+    fs::{self, File},
     io::Write,
     io::{self},
     path::{Path, PathBuf},
@@ -155,9 +155,12 @@ pub async fn download_update() -> Result<(), String> {
     let total_size = update.content_length().unwrap();
 
     let progress_bar = ProgressBar::new(total_size);
-    progress_bar.set_style(ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-        .unwrap().progress_chars("#>-"));
+    progress_bar.set_style(
+        ProgressStyle::default_bar()
+            .template("[{bar:38.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+            .unwrap()
+            .progress_chars("=>-"),
+    );
     progress_bar.set_message("Downloading update");
 
     let mut downloaded = 0;
@@ -172,6 +175,29 @@ pub async fn download_update() -> Result<(), String> {
     }
 
     progress_bar.finish();
+
+    println!("\n{}\n", "Downloaded update. Installing...".bright_green());
+
+    let current_exe = &std::env::current_exe().unwrap();
+    let current_dir = current_exe.clone();
+    let current_dir = current_dir.parent().unwrap();
+
+    let res = fs::rename(current_exe, current_dir.join("gpt-commit-rust-old"));
+
+    if res.is_err() {
+        println!("Failed to rename current executable. Please rename it manually to \"gpt-commit-rust-old\".");
+        return Ok(());
+    }
+
+    let res = fs::rename(update_file_path.to_owned(), current_exe);
+
+    if res.is_err() {
+        println!(
+            "Failed to rename update executable. Please rename it manually to \"{}\".",
+            get_executable_name()
+        );
+        return Ok(());
+    }
 
     if cfg!(unix) {
         Command::new("chmod")
