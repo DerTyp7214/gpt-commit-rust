@@ -14,7 +14,6 @@ struct OpenApiResponseBody {
     created: u64,
     choices: Vec<OpenApiResponseBodyChoice>,
     usage: OpenApiResponseBodyUsage,
-    error: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -43,6 +42,20 @@ struct OpenApiRequestBody {
     messages: Vec<OpenApiMessage>,
     temperature: f32,
     max_tokens: i32,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ErrorResponse {
+    error: Error,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct Error {
+    message: Option<String>,
+    #[serde(rename = "type")]
+    _type: Option<String>,
+    param: Option<String>,
+    code: Option<String>,
 }
 
 async fn post_api_call(
@@ -121,18 +134,22 @@ pub async fn query(
         std::process::exit(0);
     }
 
-    let json = serde_json::from_str::<OpenApiResponseBody>(&result.unwrap());
+    let json =
+        serde_json::from_str::<OpenApiResponseBody>(&result.clone().unwrap()).or_else(|_| {
+            let json = serde_json::from_str::<ErrorResponse>(&result.unwrap());
+            if let Err(err) = json {
+                return Err(format!("{}", err));
+            }
+            let error = json.unwrap().error;
+            let message = error.message.unwrap_or("".to_owned());
+            let code = error.code.unwrap_or("".to_owned());
+            println!("Error: {} {}", message.red(), code.red());
+            std::process::exit(0);
+        });
 
     if let Err(err) = json {
-        return Err(format!("Error: {}", err));
+        return Err(format!("{}", err));
     }
 
-    let json: OpenApiResponseBody = json.unwrap();
-
-    if let Some(error) = json.error {
-        return Err(error);
-    }
-
-    let choices = json.choices;
-    Ok(choices[0].message.content.to_owned())
+    Ok(json.unwrap().choices[0].message.content.to_owned())
 }
