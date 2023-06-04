@@ -133,6 +133,25 @@ jobs:
         with:
           files: |
             output/gpt-commit-rust*
-            Cargo.toml
           tag_name: v${{ steps.get_version_unix.outputs.app_version || steps.get_version_windows.outputs.app_version }}
           body_path: release.md
+  update:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get app version
+        id: get_version
+        run: |
+          if [ -f "Cargo.toml" ]; then
+            echo "app_version=$(grep -m1 version Cargo.toml | cut -d\" -f2)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release (tagged)
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            Cargo.toml
+          tag_name: v${{ steps.get_version.outputs.app_version }}
