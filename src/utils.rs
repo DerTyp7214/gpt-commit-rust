@@ -199,8 +199,6 @@ pub async fn download_update() -> Result<(), String> {
         return Ok(());
     }
 
-    fs::remove_file(current_dir.join("gpt-commit-rust-old")).unwrap();
-
     if cfg!(unix) {
         Command::new("chmod")
             .arg("+x")
@@ -254,6 +252,13 @@ pub async fn check_for_update() -> bool {
             toml.err().unwrap()
         );
         return false;
+    }
+
+    let old_executable = std::env::current_exe().unwrap();
+    let old_executable = old_executable.parent().unwrap();
+    let old_executable = old_executable.join("gpt-commit-rust-old");
+    if old_executable.exists() {
+        fs::remove_file(old_executable).unwrap();
     }
 
     let toml = toml.unwrap();
