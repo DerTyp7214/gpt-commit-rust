@@ -64,6 +64,23 @@ Options:
    gpt-commit-rust --clear-api-key
    ```
 
+## Contribution
+
+Thank you for your interest in contributing to **gpt-commit-rust**! Contributions are always welcome. To contribute, please follow these steps:
+
+1. Fork the repository on GitHub.
+2. Clone your forked repository to your local machine.
+3. Create a new branch from the `dev` branch: `git checkout -b feature/my-new-feature`.
+4. Make your desired changes to the codebase.
+5. Test your changes to ensure they work as expected.
+6. Commit your changes with descriptive commit messages.
+7. Push your changes to your forked repository.
+8. Create a pull request from your branch to the `dev` branch of the original repository.
+9. Provide a clear and concise description of your changes in the pull request.
+10. Be responsive to any feedback or questions related to your contribution.
+
+Thank you for your contribution in advance!
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
