@@ -65,7 +65,7 @@ async fn main() {
             false,
         );
         println!(
-            "{} Run `{}` to update",
+            "{} Run `{}` to update\n",
             "Update ready".bright_green(),
             update_message
         );
@@ -138,13 +138,17 @@ async fn main() {
 
     loader.stop();
 
-    let result = match result {
+    let mut result = match result {
         Ok(result) => build_commands(result, false),
         Err(err) => {
             println!("Error: {}", err);
             return;
         }
     };
+
+    if push {
+        result.push_str(" && git push");
+    }
 
     let parsed_command = parse_command(&result, true);
 
@@ -155,9 +159,6 @@ async fn main() {
     println!("");
     if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
         run_commands(&result);
-        if push {
-            run_commands("git push");
-        }
         std::process::exit(0);
     } else if input.trim() == "n" || input.trim() == "N" {
         println!("{}", "Aborted".red());

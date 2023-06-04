@@ -119,6 +119,8 @@ pub fn get_config() -> Config {
 pub fn get_executable_name() -> String {
     std::env::current_exe()
         .unwrap()
+        .file_name()
+        .unwrap()
         .to_str()
         .unwrap()
         .to_owned()
