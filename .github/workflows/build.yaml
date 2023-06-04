@@ -139,8 +139,11 @@ jobs:
 
       - name: Create Release Text
         run: |
-          body="## Commits\n"
-          body+=$(git log $(git describe --tags --exclude="v${{ steps.get_version.outputs.app_version }}" --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          latest_tag=$(git describe --tags --exclude="v${{ steps.get_version.outputs.app_version }}" --abbrev=0)
+          body="## Changelog\n"
+          body+="[$latest_tag...v${{ steps.get_version.outputs.app_version }}](${{ github.server_url }}/${{ github.repository }}/compare/$latest_tag...v${{ steps.get_version.outputs.app_version }})\n\n"
+          body+="## Commits\n"
+          body+=$(git log $latest_tag..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           echo -e $body >> release.md
 
       - name: Create Release
