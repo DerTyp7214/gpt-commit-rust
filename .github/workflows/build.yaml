@@ -118,14 +118,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           body="## Commits\n"
-          body+=$(git log $(git describe --tags --match="*-${{ matrix.os }}" --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          body+=$(git log $(git describe --tags --match="v*-${{ runner.os }}" --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           echo -e $body >> release.md
 
       - name: Create Release Text (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           $body = "## Commits`n"
-          $body += $(git log $(git describe --tags --match="*-${{ matrix.os }}" --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
+          $body += $(git log $(git describe --tags --match="v*-${{ runner.os }}" --always --abbrev=0)..HEAD --pretty=format:'`n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)') 
           Set-Content -Path "release.md" -Value $body
 
       - name: Create Release (tagged)

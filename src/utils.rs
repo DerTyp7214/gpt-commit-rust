@@ -199,6 +199,8 @@ pub async fn download_update() -> Result<(), String> {
         return Ok(());
     }
 
+    fs::remove_file(current_dir.join("gpt-commit-rust-old")).unwrap();
+
     if cfg!(unix) {
         Command::new("chmod")
             .arg("+x")
