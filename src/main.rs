@@ -64,6 +64,19 @@ async fn main() {
 
     let update_ready = check_for_update().await;
 
+    if args.contains(&"--update".to_owned()) || args.contains(&"-u".to_owned()) {
+        if !update_ready {
+            println!("{}", "No update available".yellow());
+            return;
+        }
+        let result = utils::download_update().await;
+        match result {
+            Ok(_) => println!("{}", "Updated successfully".bright_green()),
+            Err(err) => println!("{} {}", "Error:".red(), err),
+        }
+        return;
+    }
+
     if update_ready {
         let update_message = parse_command(
             format!("{} --update", get_executable_name()).as_str(),
@@ -82,19 +95,6 @@ async fn main() {
             "Version:".bright_magenta(),
             env!("CARGO_PKG_VERSION")
         );
-        return;
-    }
-
-    if args.contains(&"--update".to_owned()) || args.contains(&"-u".to_owned()) {
-        if !update_ready {
-            println!("{}", "No update available".yellow());
-            return;
-        }
-        let result = utils::download_update().await;
-        match result {
-            Ok(_) => println!("{}", "Updated successfully".bright_green()),
-            Err(err) => println!("{} {}", "Error:".red(), err),
-        }
         return;
     }
 
