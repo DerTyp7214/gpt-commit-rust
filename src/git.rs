@@ -146,30 +146,4 @@ impl Git {
 
         Ok(status_value)
     }
-
-    pub fn add_all(self: &Self) {
-        self.repo
-            .index()
-            .unwrap()
-            .add_all(&["."], git2::IndexAddOption::DEFAULT, None)
-            .unwrap();
-    }
-
-    pub fn commit(self: &Self, message: String) {
-        let mut index = self.repo.index().unwrap();
-        let oid = index.write_tree().unwrap();
-        let signature = self.repo.signature().unwrap();
-        let parent_commit = self.repo.head().unwrap().peel_to_commit().unwrap();
-        let tree = self.repo.find_tree(oid).unwrap();
-        self.repo
-            .commit(
-                Some("HEAD"),
-                &signature,
-                &signature,
-                &message,
-                &tree,
-                &[&parent_commit],
-            )
-            .unwrap();
-    }
 }

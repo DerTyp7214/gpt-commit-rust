@@ -12,7 +12,7 @@ use colored::Colorize;
 use gpt_api::query;
 
 use crate::{
-    command_utils::parse_command,
+    command_utils::{parse_command, run_commands},
     git::{build_commands, Git},
     utils::{check_for_update, get_executable_name},
 };
@@ -190,8 +190,7 @@ async fn main() {
     std::io::stdin().read_line(&mut input).unwrap();
     println!("");
     if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
-        git.add_all();
-        git.commit(result);
+        run_commands(&result);
         std::process::exit(0);
     } else if input.trim() == "n" || input.trim() == "N" {
         println!("{}", "Aborted".red());
