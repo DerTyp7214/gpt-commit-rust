@@ -8,10 +8,11 @@ mod utils;
 use std::env;
 
 use colored::Colorize;
+
 use gpt_api::query;
 
 use crate::{
-    command_utils::{parse_command, run_commands},
+    command_utils::parse_command,
     git::{build_commands, Git},
     utils::{check_for_update, get_executable_name},
 };
@@ -165,7 +166,7 @@ async fn main() {
 
     let loader = utils::Loader::new("Waiting for response from GPT-3");
 
-    let result = query(None, git, args).await;
+    let result = query(None, &git, args).await;
 
     loader.stop();
 
@@ -189,7 +190,8 @@ async fn main() {
     std::io::stdin().read_line(&mut input).unwrap();
     println!("");
     if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
-        run_commands(&result);
+        git.add_all();
+        git.commit(result);
         std::process::exit(0);
     } else if input.trim() == "n" || input.trim() == "N" {
         println!("{}", "Aborted".red());

@@ -91,7 +91,7 @@ async fn post_api_call(
 
 pub async fn query(
     previous_response: Option<Vec<String>>,
-    git: Git,
+    git: &Git,
     files: Vec<String>,
 ) -> Result<String, String> {
     let config = utils::get_config();

@@ -9,11 +9,11 @@ fn get_params() -> Vec<String> {
     params.iter().map(|s| s.to_string()).collect()
 }
 
-pub fn build_query(git: Git, files: Vec<String>) -> String {
+pub fn build_query(git: &Git, files: Vec<String>) -> String {
     let params = get_params().join("\n");
     let os_info = get_os_info();
-    let diff = git.get_diff(Some(files)).unwrap();
-    let status = git.get_status().unwrap();
+    let diff = git.clone().get_diff(Some(files)).unwrap();
+    let status = git.clone().get_status().unwrap();
 
     let main = format!("{}\n\n{}\n\n", os_info, params);
 
