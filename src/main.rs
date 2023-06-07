@@ -12,7 +12,7 @@ use colored::Colorize;
 use gpt_api::query;
 
 use crate::{
-    command_utils::{parse_command, run_commands},
+    command_utils::{parse_command, parse_commands, run_commands},
     git::{build_commands, Git},
     utils::{check_for_update, get_executable_name},
 };
@@ -170,19 +170,15 @@ async fn main() {
 
     loader.stop();
 
-    let mut result = match result {
-        Ok(result) => build_commands(result, false),
+    let result = match result {
+        Ok(result) => build_commands(result, push),
         Err(err) => {
             println!("Error: {}", err);
             return;
         }
     };
 
-    if push {
-        result.push_str(" && git push");
-    }
-
-    let parsed_command = parse_command(&result, true);
+    let parsed_command = parse_commands(&result, true);
 
     println!("{}\n{}", "Commands:".bright_magenta(), parsed_command);
     print!("\n{} {}: ", "Confirm".green(), "(Y/n)");

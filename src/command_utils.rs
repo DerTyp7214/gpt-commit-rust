@@ -1,79 +1,41 @@
 use colored::*;
-use std::process::{Child, Command};
+use std::process::Command;
 
-pub fn run_commands(commands: &str) {
-    if commands.contains(" && ") {
-        return run_and_commands(commands);
-    }
-
-    if commands.contains(" | ") {
-        return run_pipe_commands(commands);
-    }
-
-    let commands = commands.split('\n');
+pub fn run_commands(commands: &Vec<Vec<String>>) {
     for c in commands {
-        if c.trim() == "" {
-            continue;
+        let mut command = Command::new(&c[0]);
+        for arg in &c[1..] {
+            command.arg(arg);
         }
-        run_command(c).unwrap().wait().unwrap();
+        command.spawn().unwrap().wait().unwrap();
     }
 }
 
-fn run_and_commands(commands: &str) {
-    let commands = commands.split(" && ");
-    let mut last_command = None;
-    for c in commands {
-        if c.trim() == "" {
-            continue;
-        }
-        let mut command = run_command(c).unwrap();
-        command.wait().unwrap();
-        last_command = Some(command);
-    }
-    if let Some(mut command) = last_command {
-        command.wait().unwrap();
-    }
-}
-
-fn run_pipe_commands(commands: &str) {
-    let commands = commands.split(" | ");
-    let mut last_command: Option<Child> = None;
-    for c in commands {
-        if c.trim() == "" {
-            continue;
-        }
-        let mut command = run_command(c).unwrap();
-        if let Some(mut last_command) = last_command {
-            last_command.stdout = command.stdout.take();
-            last_command.wait().unwrap();
-        }
-        last_command = Some(command);
-    }
-    if let Some(mut command) = last_command {
-        command.wait().unwrap();
-    }
-}
-
-fn run_command(command: &str) -> Result<Child, std::io::Error> {
-    let mut parts = command.split_whitespace();
-    let cmd = parts.next().unwrap();
-    let args = parts.collect::<Vec<_>>();
-    let args = args
+pub fn parse_commands(commands: &Vec<Vec<String>>, new_lines: bool) -> String {
+    return commands
         .into_iter()
-        .fold::<Vec<String>, _>(vec![], |mut args, arg| match args.last_mut() {
-            Some(last) if last.starts_with('"') => {
-                *last = format!("{} {}", last, arg);
-                args
-            }
-            _ => {
-                args.push(arg.to_owned());
-                args
-            }
+        .map(|command| {
+            colorize_command(
+                command
+                    .into_iter()
+                    .map(|arg| {
+                        if arg.contains(' ') {
+                            format!("\"{}\"", arg).to_owned()
+                        } else {
+                            arg.to_owned()
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join(" ")
+                    .as_str(),
+            )
         })
-        .into_iter()
-        .map(|arg| arg.replace("\"", ""))
-        .collect::<Vec<_>>();
-    Command::new(cmd).args(args).spawn()
+        .collect::<Vec<_>>()
+        .join(&format!(
+            "{}{}",
+            " &&".bright_black(),
+            if new_lines { "\n" } else { " " }
+        ));
 }
 
 pub fn parse_command(line: &str, new_lines: bool) -> String {

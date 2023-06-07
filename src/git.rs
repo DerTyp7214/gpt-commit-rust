@@ -3,22 +3,24 @@ use git2::{DiffFormat, DiffOptions, Repository, StatusOptions};
 use normpath::{BasePathBuf, PathExt};
 use std::{path::Path, str};
 
-pub fn build_commands(commit_message: String, include_push: bool) -> String {
+pub fn build_commands(commit_message: String, include_push: bool) -> Vec<Vec<String>> {
     let mut commit_message = commit_message;
 
     if commit_message.starts_with("\"") && commit_message.ends_with("\"") {
         commit_message = commit_message[1..commit_message.len() - 1].to_owned();
     }
 
-    let mut commands = String::new();
-    commands.push_str("git add .");
-    commands.push_str(" && ");
-    commands.push_str("git commit -m");
-    commands.push(' ');
-    commands.push_str(format!("\"{}\"", commit_message).as_str());
+    let mut commands: Vec<Vec<String>> = Vec::new();
+    commands.push("git add .".split(' ').map(|s| s.to_owned()).collect());
+    let mut commit_command: Vec<String> = "git commit -m"
+        .to_owned()
+        .split(' ')
+        .map(|s| s.to_owned())
+        .collect();
+    commit_command.push(commit_message);
+    commands.push(commit_command);
     if include_push {
-        commands.push_str(" && ");
-        commands.push_str("git push");
+        commands.push("git push".split(' ').map(|s| s.to_owned()).collect());
     }
 
     commands
