@@ -5,7 +5,12 @@ mod os_info;
 mod query_params;
 mod utils;
 
-use std::env;
+use std::{
+    env,
+    fs::{self, File},
+    io::Write,
+    path::Path,
+};
 
 use colored::Colorize;
 
@@ -14,6 +19,7 @@ use gpt_api::query;
 use crate::{
     command_utils::{parse_command, parse_commands, run_commands},
     git::{build_commands, Git},
+    gpt_api::init,
     utils::{check_for_update, get_executable_name},
 };
 
@@ -49,6 +55,11 @@ async fn main() {
             "{} {}",
             "--force-update, -f:".magenta(),
             "Forces the update to the latest version"
+        );
+        println!(
+            "{} {}",
+            "--init, -i [files]:".magenta(),
+            "Initializes a README.md file in the current directory based on the content of the given files"
         );
         println!(
             "{} {}",
@@ -163,6 +174,75 @@ async fn main() {
     }
 
     let git = git.unwrap();
+
+    if args.contains(&"--init".to_owned()) || args.contains(&"-i".to_owned()) {
+        let mut pos = args.iter().position(|s| s == "--init");
+        if pos.is_none() {
+            pos = args.iter().position(|s| s == "-i");
+            if pos.is_none() {
+                println!(
+                    "{} {}",
+                    "Error:".red(),
+                    "No files specified to initialize README.md"
+                );
+                return;
+            }
+        }
+        let pos = pos.unwrap();
+        if pos + 1 >= args.len() {
+            println!(
+                "{} {}",
+                "Error:".red(),
+                "No files specified to initialize README.md"
+            );
+            return;
+        }
+        let files = args[pos + 1..].to_vec();
+
+        let loader = utils::Loader::new("Waiting for response from GPT-3");
+
+        let result = init(&git, files).await;
+
+        loader.stop();
+
+        match result {
+            Ok(_) => {
+                let path = Path::new("README.md");
+                if path.exists() {
+                    fs::remove_file(&path).unwrap();
+                }
+                let mut file = match File::create(&path) {
+                    Err(why) => {
+                        println!("{} {}", "Error:".red(), why);
+                        std::process::exit(1);
+                    }
+                    Ok(file) => file,
+                };
+                let write = file.write(result.unwrap().as_bytes());
+                if write.is_err() {
+                    println!("{} {}", "Error:".red(), write.unwrap_err());
+                    std::process::exit(1);
+                }
+                println!("{}", "README.md initialized successfully".bright_green());
+            }
+            Err(err) => return println!("{} {}", "Error:".red(), err),
+        }
+
+        print!("\n{} {}: ", "Commit".green(), "(Y/n)");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        println!("");
+        if input.trim() == "y" || input.trim() == "" || input.trim() == "Y" {
+            let commands = build_commands("Created README.md".to_owned(), push);
+            run_commands(&commands);
+            std::process::exit(0);
+        } else if input.trim() == "n" || input.trim() == "N" {
+            println!("{}", "Aborted".red());
+            std::process::exit(0);
+        }
+        println!("{}", "Invalid input".red());
+        std::process::exit(1);
+    }
 
     let loader = utils::Loader::new("Waiting for response from GPT-3");
 

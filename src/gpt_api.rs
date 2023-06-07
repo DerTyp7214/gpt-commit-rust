@@ -4,7 +4,7 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::git::Git;
-use crate::query_params::build_query;
+use crate::query_params::{build_query, build_readme_query};
 use crate::utils;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -117,6 +117,61 @@ pub async fn query(
     };
 
     let mut headers = HeaderMap::new();
+    headers.insert(
+        AUTHORIZATION,
+        format!("Bearer {}", config.get_api_key()).parse().unwrap(),
+    );
+
+    let result = post_api_call(
+        "https://api.openai.com/v1/chat/completions",
+        serde_json::to_string(&body).unwrap().as_str(),
+        Some(headers),
+    )
+    .await;
+
+    if let Err(err) = result {
+        println!("Error: {}", err.red());
+        std::process::exit(0);
+    }
+
+    let json =
+        serde_json::from_str::<OpenApiResponseBody>(&result.clone().unwrap()).or_else(|_| {
+            let json = serde_json::from_str::<ErrorResponse>(&result.unwrap());
+            if let Err(err) = json {
+                return Err(format!("{}", err));
+            }
+            let error = json.unwrap().error;
+            let message = error.message.unwrap_or("".to_owned());
+            let code = error.code.unwrap_or("".to_owned());
+            println!("Error: {} {}", message.red(), code.red());
+            std::process::exit(0);
+        });
+
+    if let Err(err) = json {
+        return Err(format!("{}", err));
+    }
+
+    Ok(json.unwrap().choices[0].message.content.to_owned())
+}
+
+pub async fn init(git: &Git, files: Vec<String>) -> Result<String, String> {
+    let mut messages: Vec<OpenApiMessage> = Vec::new();
+    messages.push(OpenApiMessage {
+        role: "user".to_owned(),
+        content: build_readme_query(git, files),
+    });
+
+    let body = OpenApiRequestBody {
+        model: "gpt-3.5-turbo".to_owned(),
+        messages,
+        temperature: 0.9,
+        max_tokens: 1500,
+    };
+
+    let mut headers = HeaderMap::new();
+
+    let config = utils::get_config();
+
     headers.insert(
         AUTHORIZATION,
         format!("Bearer {}", config.get_api_key()).parse().unwrap(),
