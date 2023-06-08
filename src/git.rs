@@ -195,7 +195,7 @@ impl Git {
 
         match commit_response {
             Ok(commit) => {
-                let new_tree = self.repo.find_tree(commit).unwrap();
+                let new_tree = self.repo.find_tree(index.write_tree().unwrap()).unwrap();
 
                 let commit_hash = commit.to_string();
                 let commit_hash = commit_hash[..7].to_string();
