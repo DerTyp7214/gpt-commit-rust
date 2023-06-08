@@ -182,6 +182,16 @@ impl Git {
         let parent_commit = self.repo.head().unwrap().peel_to_commit().unwrap();
         let tree = self.repo.find_tree(oid).unwrap();
 
+        let mut diff_options = git2::DiffOptions::new();
+        diff_options.include_untracked(true);
+        diff_options.include_unmodified(true);
+        diff_options.include_typechange(true);
+
+        let diff = self
+            .repo
+            .diff_tree_to_index(None, None, Some(&mut diff_options))
+            .unwrap();
+
         let commit_response: Result<Oid, git2::Error> = self.repo.commit(
             Some("HEAD"),
             &signature,
@@ -199,16 +209,6 @@ impl Git {
                 let commit_message = commit_message.replace("\r", " ");
                 let commit_message = commit_message.replace("\t", " ");
                 let commit_message = commit_message.replace("  ", " ");
-
-                let mut diff_options = git2::DiffOptions::new();
-                diff_options.include_untracked(true);
-                diff_options.include_unmodified(true);
-                diff_options.include_typechange(true);
-
-                let diff = self
-                    .repo
-                    .diff_tree_to_index(Some(&tree), None, Some(&mut diff_options))
-                    .unwrap();
 
                 let stats = diff.stats().unwrap();
                 let files_changed = stats.files_changed();
