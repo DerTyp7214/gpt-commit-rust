@@ -196,6 +196,10 @@ impl Git {
 
         let stats = diff.stats().unwrap();
 
+        let files_changed = stats.files_changed();
+        let insertions = stats.insertions();
+        let deletions = stats.deletions();
+
         let commit_response: Result<Oid, git2::Error> = self.repo.commit(
             Some("HEAD"),
             &signature,
@@ -214,10 +218,6 @@ impl Git {
                 let commit_message = commit_message.replace("\r", " ");
                 let commit_message = commit_message.replace("\t", " ");
                 let commit_message = commit_message.replace("  ", " ");
-
-                let files_changed = stats.files_changed();
-                let insertions = stats.insertions();
-                let deletions = stats.deletions();
 
                 println!(
                     "[{} {}] {}",
