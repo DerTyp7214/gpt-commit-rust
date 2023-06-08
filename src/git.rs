@@ -35,8 +35,6 @@ pub fn build_commands(
         commands.push("git push".split(' ').map(|s| s.to_owned()).collect());
     }
 
-    println!("Commands: {:?}", commands);
-
     commands
 }
 
@@ -175,7 +173,11 @@ impl Git {
             .unwrap();
     }
 
-    pub fn commit(self: &Self, message: &String) -> Result<Oid, git2::Error> {
+    pub fn commit(
+        self: &Self,
+        message: &String,
+        files: Option<&Vec<String>>,
+    ) -> Result<Oid, git2::Error> {
         let mut index = self.repo.index().unwrap();
         let oid = index.write_tree().unwrap();
         let signature = self.repo.signature().unwrap();
@@ -189,16 +191,7 @@ impl Git {
         diff_options.include_typechange(true);
         diff_options.recurse_untracked_dirs(true);
 
-        let diff = self
-            .repo
-            .diff_tree_to_index(Some(&tree), Some(&index), Some(&mut diff_options))
-            .unwrap();
-
-        let stats = diff.stats().unwrap();
-
-        let files_changed = stats.files_changed();
-        let insertions = stats.insertions();
-        let deletions = stats.deletions();
+        let (files_changed, insertions, deletions) = get_file_diff_stats(&self.repo, files);
 
         let commit_response: Result<Oid, git2::Error> = self.repo.commit(
             Some("HEAD"),
@@ -260,4 +253,90 @@ fn paths_to_git_paths(paths: &Vec<String>) -> Vec<String> {
                 .join("/")
         })
         .collect()
+}
+
+fn get_file_diff_stats(
+    repo: &Repository,
+    file_paths: Option<&Vec<String>>,
+) -> (usize, usize, usize) {
+    let mut diff_options = DiffOptions::new();
+    diff_options.include_unmodified(true);
+
+    let head = repo.head().unwrap();
+    let head_commit = head.peel_to_commit().unwrap();
+    let tree = head_commit.tree().unwrap();
+    let index = repo.index().unwrap();
+
+    let file_paths = file_paths
+        .unwrap_or(&vec![])
+        .iter()
+        .map(|path| {
+            Path::new(path)
+                .normalize()
+                .unwrap()
+                .as_path()
+                .to_str()
+                .unwrap()
+                .to_owned()
+        })
+        .collect::<Vec<String>>();
+
+    let diff = repo
+        .diff_tree_to_index(Some(&tree), Some(&index), Some(&mut diff_options))
+        .unwrap();
+
+    let stats = diff
+        .deltas()
+        .filter(|delta| {
+            file_paths.is_empty()
+                || file_paths.contains(
+                    &delta
+                        .new_file()
+                        .path()
+                        .unwrap()
+                        .normalize()
+                        .unwrap()
+                        .as_path()
+                        .to_str()
+                        .unwrap()
+                        .to_owned(),
+                )
+        })
+        .map(|delta| {
+            let new_file = delta.new_file();
+            let old_file = delta.old_file();
+            let new_commit = repo.find_commit(new_file.id());
+            let old_commit = repo.find_commit(old_file.id());
+
+            if new_commit.is_err() || old_commit.is_err() {
+                return None;
+            }
+
+            let new_commit = new_commit.unwrap();
+            let old_commit = old_commit.unwrap();
+
+            let diff = repo
+                .diff_tree_to_tree(
+                    Some(&old_commit.tree().unwrap()),
+                    Some(&new_commit.tree().unwrap()),
+                    None,
+                )
+                .unwrap();
+            Some(diff.stats().unwrap())
+        })
+        .filter(|stats| stats.is_some())
+        .map(|stats| stats.unwrap())
+        .fold((0, 0, 0), |acc, status| {
+            (
+                acc.0 + status.insertions(),
+                acc.1 + status.deletions(),
+                acc.2 + 1,
+            )
+        });
+
+    let insertions = stats.0;
+    let deletions = stats.1;
+    let files_changed = stats.2;
+
+    (files_changed, insertions, deletions)
 }
