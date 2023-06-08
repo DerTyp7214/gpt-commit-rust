@@ -242,6 +242,7 @@ async fn main() {
             }
 
             if push {
+                println!("");
                 git.push();
             }
 
@@ -287,6 +288,7 @@ async fn main() {
         }
 
         if push {
+            println!("");
             git.push();
         }
 
