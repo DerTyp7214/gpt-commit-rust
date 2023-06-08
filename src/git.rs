@@ -206,6 +206,7 @@ impl Git {
         match commit_response {
             Ok(commit) => {
                 let commit_hash = commit.to_string();
+                let commit_hash = commit_hash[..7].to_string();
                 let commit_message = message.trim();
                 let commit_message = commit_message.replace("\n", " ");
                 let commit_message = commit_message.replace("\r", " ");
