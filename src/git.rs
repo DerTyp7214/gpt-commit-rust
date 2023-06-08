@@ -308,6 +308,8 @@ fn get_file_diff_stats(
             let new_commit = repo.find_commit(new_file.id());
             let old_commit = repo.find_commit(old_file.id());
 
+            println!("{} {}", new_file.id(), old_file.id());
+
             if new_commit.is_err() || old_commit.is_err() {
                 return None;
             }
