@@ -216,7 +216,7 @@ impl Git {
     }
 
     pub fn push(self: &Self) {
-        run_commands(&vec![vec!["git push".to_owned()]]);
+        run_commands(&vec![vec!["git".to_owned(), "push".to_owned()]]);
     }
 }
 
