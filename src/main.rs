@@ -241,8 +241,6 @@ async fn main() {
                 std::process::exit(1);
             }
 
-            println!("{} {}", "Committed:".bright_green(), "Created README.md");
-
             if push {
                 git.push();
             }
@@ -287,10 +285,6 @@ async fn main() {
             println!("{} {}", "Error:".red(), commit_result.unwrap_err());
             std::process::exit(1);
         }
-
-        println!("{}", commit_result.unwrap().to_string());
-
-        println!("{} {}", "Committed:".bright_green(), result);
 
         if push {
             git.push();
