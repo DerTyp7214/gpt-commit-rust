@@ -127,7 +127,6 @@ fn colorize_git_commit_command(args: Vec<&str>) -> String {
     let mut in_message = false;
 
     for arg in args {
-        println!("{:?}", arg);
         if arg == "-m" {
             in_message = true;
         } else if in_message {
