@@ -233,13 +233,14 @@ async fn main() {
         std::io::stdin().read_line(&mut input).unwrap();
         println!("");
         if input.trim() == "y" || input.trim() == "" || input.trim() == "Y" {
-            git.add_all(Some(&args));
-            let commit_result = git.commit(&"Created README.md".to_owned());
+            git.add_old(Some(&args));
+            /*let commit_result = git.commit(&"Created README.md".to_owned());
 
             if commit_result.is_err() {
                 println!("{} {}", "Error:".red(), commit_result.unwrap_err());
                 std::process::exit(1);
-            }
+            }*/
+            git.commit_old(&"Created README.md".to_owned());
 
             if push {
                 println!("");
@@ -279,13 +280,14 @@ async fn main() {
     std::io::stdin().read_line(&mut input).unwrap();
     println!("");
     if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
-        git.add_all(Some(&args));
-        let commit_result = git.commit(&result);
+        git.add_old(Some(&args));
+        /*let commit_result = git.commit(&result);
 
         if commit_result.is_err() {
             println!("{} {}", "Error:".red(), commit_result.unwrap_err());
             std::process::exit(1);
-        }
+        }*/
+        git.commit_old(&result);
 
         if push {
             println!("");

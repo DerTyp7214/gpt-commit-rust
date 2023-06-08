@@ -1,7 +1,7 @@
 use colored::Colorize;
 use git2::{DiffFormat, DiffOptions, Oid, Repository, StatusOptions};
 use normpath::{BasePathBuf, PathExt};
-use std::{path::Path, str};
+use std::{path::Path, str, vec};
 
 use crate::command_utils::{replace_gitmoji_with_emoji, run_commands};
 
@@ -161,7 +161,8 @@ impl Git {
         Ok(status_value)
     }
 
-    pub fn add_all(self: &Self, files: Option<&Vec<String>>) {
+    #[allow(dead_code)]
+    pub fn add(self: &Self, files: Option<&Vec<String>>) {
         self.repo
             .index()
             .unwrap()
@@ -173,6 +174,37 @@ impl Git {
             .unwrap();
     }
 
+    #[allow(dead_code)]
+    pub fn add_old(self: &Self, files: Option<&Vec<String>>) {
+        let mut add_command = vec!["git".to_owned(), "add".to_owned()];
+        let default = &vec![];
+        let files = files.unwrap_or(default);
+        if files.is_empty() {
+            add_command.push(".".to_owned());
+        } else {
+            for file in files {
+                let file = Path::new(file).normalize().unwrap();
+                let file = file.as_path().to_str().unwrap();
+                add_command.push(file.to_owned());
+            }
+        }
+
+        run_commands(&vec![add_command])
+    }
+
+    #[allow(dead_code)]
+    pub fn commit_old(self: &Self, message: &String) {
+        let commands = vec![vec![
+            "git".to_owned(),
+            "commit".to_owned(),
+            "-m".to_owned(),
+            message.to_owned(),
+        ]];
+
+        run_commands(&commands)
+    }
+
+    #[allow(dead_code)]
     pub fn commit(self: &Self, message: &String) -> Result<Oid, git2::Error> {
         let mut index = self.repo.index().unwrap();
         let oid = index.write_tree().unwrap();
