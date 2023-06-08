@@ -183,9 +183,11 @@ impl Git {
         let tree = self.repo.find_tree(oid).unwrap();
 
         let mut diff_options = git2::DiffOptions::new();
+        diff_options.include_ignored(false);
         diff_options.include_untracked(true);
         diff_options.include_unmodified(true);
         diff_options.include_typechange(true);
+        diff_options.recurse_untracked_dirs(true);
 
         let diff = self
             .repo
