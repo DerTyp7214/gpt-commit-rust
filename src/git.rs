@@ -1,17 +1,29 @@
 use colored::Colorize;
-use git2::{DiffFormat, DiffOptions, Repository, StatusOptions};
+use git2::{DiffFormat, DiffOptions, Oid, Repository, StatusOptions};
 use normpath::{BasePathBuf, PathExt};
 use std::{path::Path, str};
 
-pub fn build_commands(commit_message: String, include_push: bool) -> Vec<Vec<String>> {
-    let mut commit_message = commit_message;
+use crate::command_utils::run_commands;
+
+pub fn build_commands(
+    commit_message: &String,
+    include_push: bool,
+    files: &Vec<String>,
+) -> Vec<Vec<String>> {
+    let mut commit_message = commit_message.clone();
 
     if commit_message.starts_with("\"") && commit_message.ends_with("\"") {
         commit_message = commit_message[1..commit_message.len() - 1].to_owned();
     }
 
     let mut commands: Vec<Vec<String>> = Vec::new();
-    commands.push("git add .".split(' ').map(|s| s.to_owned()).collect());
+    let mut add_command: Vec<String> = "git add"
+        .to_owned()
+        .split(' ')
+        .map(|s| s.to_owned())
+        .collect();
+    add_command.extend(paths_to_git_paths(&files));
+    commands.push(add_command);
     let mut commit_command: Vec<String> = "git commit -m"
         .to_owned()
         .split(' ')
@@ -22,6 +34,8 @@ pub fn build_commands(commit_message: String, include_push: bool) -> Vec<Vec<Str
     if include_push {
         commands.push("git push".split(' ').map(|s| s.to_owned()).collect());
     }
+
+    println!("Commands: {:?}", commands);
 
     commands
 }
@@ -148,4 +162,54 @@ impl Git {
 
         Ok(status_value)
     }
+
+    pub fn add_all(self: &Self, files: Option<&Vec<String>>) {
+        self.repo
+            .index()
+            .unwrap()
+            .add_all(
+                paths_to_git_paths(&files.unwrap_or(&vec![])).iter(),
+                git2::IndexAddOption::DEFAULT,
+                None,
+            )
+            .unwrap();
+    }
+
+    pub fn commit(self: &Self, message: &String) -> Result<Oid, git2::Error> {
+        let mut index = self.repo.index().unwrap();
+        let oid = index.write_tree().unwrap();
+        let signature = self.repo.signature().unwrap();
+        let parent_commit = self.repo.head().unwrap().peel_to_commit().unwrap();
+        let tree = self.repo.find_tree(oid).unwrap();
+        self.repo.commit(
+            Some("HEAD"),
+            &signature,
+            &signature,
+            &message,
+            &tree,
+            &[&parent_commit],
+        )
+    }
+
+    pub fn push(self: &Self) {
+        run_commands(&vec![vec!["git push".to_owned()]]);
+    }
+}
+
+fn paths_to_git_paths(paths: &Vec<String>) -> Vec<String> {
+    if paths.is_empty() {
+        return vec![".".to_owned()];
+    }
+    paths
+        .iter()
+        .map(|entry| Path::new(entry))
+        .map(|entry| {
+            entry
+                .into_iter()
+                .map(|entry| entry.to_str().unwrap().to_owned())
+                .filter(|entry| entry != &".")
+                .collect::<Vec<String>>()
+                .join("/")
+        })
+        .collect()
 }
