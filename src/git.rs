@@ -189,7 +189,7 @@ impl Git {
 
         let diff = self
             .repo
-            .diff_tree_to_index(None, None, Some(&mut diff_options))
+            .diff_tree_to_index(Some(&tree), Some(&index), Some(&mut diff_options))
             .unwrap();
 
         let commit_response: Result<Oid, git2::Error> = self.repo.commit(
