@@ -181,14 +181,56 @@ impl Git {
         let signature = self.repo.signature().unwrap();
         let parent_commit = self.repo.head().unwrap().peel_to_commit().unwrap();
         let tree = self.repo.find_tree(oid).unwrap();
-        self.repo.commit(
+        let commit_response: Result<Oid, git2::Error> = self.repo.commit(
             Some("HEAD"),
             &signature,
             &signature,
             &message,
             &tree,
             &[&parent_commit],
-        )
+        );
+
+        match commit_response {
+            Ok(commit) => {
+                let commit_hash = commit.to_string();
+                let commit_message = message.trim();
+                let commit_message = commit_message.replace("\n", " ");
+                let commit_message = commit_message.replace("\r", " ");
+                let commit_message = commit_message.replace("\t", " ");
+                let commit_message = commit_message.replace("  ", " ");
+
+                let mut diff_options = git2::DiffOptions::new();
+                diff_options.include_untracked(true);
+                diff_options.include_unmodified(true);
+                diff_options.include_typechange(true);
+
+                let diff = self
+                    .repo
+                    .diff_tree_to_index(None, Some(&mut index), Some(&mut diff_options))
+                    .unwrap();
+                let stats = diff.stats().unwrap();
+                let files_changed = stats.files_changed();
+                let insertions = stats.insertions();
+                let deletions = stats.deletions();
+
+                println!(
+                    "[{} {}] {}",
+                    self.repo.head().unwrap().shorthand().unwrap(),
+                    commit_hash,
+                    commit_message
+                );
+                println!(
+                    "{} files changed, {} insertions(+), {} deletions(-)",
+                    files_changed, insertions, deletions
+                );
+            }
+            Err(err) => {
+                println!("Error: {}", err.message());
+                return Err(err);
+            }
+        };
+
+        commit_response
     }
 
     pub fn push(self: &Self) {
