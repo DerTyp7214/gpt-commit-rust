@@ -17,7 +17,7 @@ use colored::Colorize;
 use gpt_api::query;
 
 use crate::{
-    command_utils::{parse_command, parse_commands, run_commands},
+    command_utils::{parse_command, parse_commands},
     git::{build_commands, Git},
     gpt_api::init,
     utils::{check_for_update, get_executable_name},
@@ -233,8 +233,20 @@ async fn main() {
         std::io::stdin().read_line(&mut input).unwrap();
         println!("");
         if input.trim() == "y" || input.trim() == "" || input.trim() == "Y" {
-            let commands = build_commands("Created README.md".to_owned(), push);
-            run_commands(&commands);
+            git.add_all(Some(&args));
+            let commit_result = git.commit(&"Created README.md".to_owned());
+
+            if commit_result.is_err() {
+                println!("{} {}", "Error:".red(), commit_result.unwrap_err());
+                std::process::exit(1);
+            }
+
+            println!("{} {}", "Committed:".bright_green(), "Created README.md");
+
+            if push {
+                git.push();
+            }
+
             std::process::exit(0);
         } else if input.trim() == "n" || input.trim() == "N" {
             println!("{}", "Aborted".red());
@@ -246,19 +258,21 @@ async fn main() {
 
     let loader = utils::Loader::new("Waiting for response from GPT-3");
 
-    let result = query(None, &git, args).await;
+    let result = query(None, &git, args.clone()).await;
 
     loader.stop();
 
     let result = match result {
-        Ok(result) => build_commands(result, push),
+        Ok(result) => result,
         Err(err) => {
             println!("Error: {}", err);
             return;
         }
     };
 
-    let parsed_command = parse_commands(&result, true);
+    let command = build_commands(&result, push, &args);
+
+    let parsed_command = parse_commands(&command, true);
 
     println!("{}\n{}", "Commands:".bright_magenta(), parsed_command);
     print!("\n{} {}: ", "Confirm".green(), "(Y/n)");
@@ -266,7 +280,22 @@ async fn main() {
     std::io::stdin().read_line(&mut input).unwrap();
     println!("");
     if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
-        run_commands(&result);
+        git.add_all(Some(&args));
+        let commit_result = git.commit(&result);
+
+        if commit_result.is_err() {
+            println!("{} {}", "Error:".red(), commit_result.unwrap_err());
+            std::process::exit(1);
+        }
+
+        println!("{}", commit_result.unwrap().to_string());
+
+        println!("{} {}", "Committed:".bright_green(), result);
+
+        if push {
+            git.push();
+        }
+
         std::process::exit(0);
     } else if input.trim() == "n" || input.trim() == "N" {
         println!("{}", "Aborted".red());
