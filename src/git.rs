@@ -17,19 +17,19 @@ pub fn build_commands(
     }
 
     let mut commands: Vec<Vec<String>> = Vec::new();
-    let mut add_command: Vec<String> = "git add"
-        .to_owned()
-        .split(' ')
-        .map(|s| s.to_owned())
-        .collect();
+    let mut add_command: Vec<String> = vec!["git".to_owned(), "add".to_owned()];
     add_command.extend(paths_to_git_paths(&files));
     commands.push(add_command);
-    let mut commit_command: Vec<String> = "git commit -m"
-        .to_owned()
-        .split(' ')
-        .map(|s| s.to_owned())
-        .collect();
-    commit_command.push(commit_message);
+    let mut commit_command: Vec<String> = vec!["git".to_owned(), "commit".to_owned()];
+
+    for msg in commit_message.split('\n') {
+        if msg.is_empty() {
+            continue;
+        }
+        commit_command.push("-m".to_owned());
+        commit_command.push(msg.to_owned());
+    }
+
     commands.push(commit_command);
     if include_push {
         commands.push("git push".split(' ').map(|s| s.to_owned()).collect());
@@ -194,14 +194,14 @@ impl Git {
 
     #[allow(dead_code)]
     pub fn commit_old(self: &Self, message: &String) {
-        let commands = vec![vec![
-            "git".to_owned(),
-            "commit".to_owned(),
-            "-m".to_owned(),
-            message.to_owned(),
-        ]];
+        let mut commit_command = vec!["git".to_owned(), "commit".to_owned()];
 
-        run_commands(&commands)
+        for msg in message.split("\n") {
+            commit_command.push("-m".to_owned());
+            commit_command.push(msg.to_owned());
+        }
+
+        run_commands(&vec![commit_command])
     }
 
     #[allow(dead_code)]

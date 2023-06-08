@@ -15,20 +15,7 @@ pub fn parse_commands(commands: &Vec<Vec<String>>, new_lines: bool) -> String {
     return commands
         .into_iter()
         .map(|command| {
-            colorize_command(
-                command
-                    .into_iter()
-                    .map(|arg| {
-                        if arg.contains(' ') {
-                            format!("\"{}\"", arg).to_owned()
-                        } else {
-                            arg.to_owned()
-                        }
-                    })
-                    .collect::<Vec<String>>()
-                    .join(" ")
-                    .as_str(),
-            )
+            colorize_command(command.into_iter().map(|s| s.as_str()).collect::<Vec<_>>())
         })
         .collect::<Vec<_>>()
         .join(&format!(
@@ -55,13 +42,13 @@ pub fn parse_command(line: &str, new_lines: bool) -> String {
         return colorize_and_command(line, new_lines);
     }
 
-    colorize_command(line)
+    colorize_command(line.split_whitespace().collect::<Vec<_>>())
 }
 
 fn colorize_pipe_command(command: &str, new_lines: bool) -> String {
     command
         .split(" | ")
-        .map(|cmd| colorize_command(cmd))
+        .map(|cmd| colorize_command(cmd.split_whitespace().collect::<Vec<_>>()))
         .collect::<Vec<_>>()
         .join(&format!(
             "{}{}",
@@ -73,7 +60,7 @@ fn colorize_pipe_command(command: &str, new_lines: bool) -> String {
 fn colorize_and_command(command: &str, new_lines: bool) -> String {
     command
         .split(" && ")
-        .map(|cmd| colorize_command(cmd))
+        .map(|cmd| colorize_command(cmd.split_whitespace().collect::<Vec<_>>()))
         .collect::<Vec<_>>()
         .join(&format!(
             "{}{}",
@@ -82,8 +69,8 @@ fn colorize_and_command(command: &str, new_lines: bool) -> String {
         ))
 }
 
-fn colorize_command(command: &str) -> String {
-    let mut parts = command.split_whitespace();
+fn colorize_command(command: Vec<&str>) -> String {
+    let mut parts = command.into_iter();
     if let Some(cmd) = parts.next() {
         if cmd == "git" {
             return format!(
@@ -135,38 +122,26 @@ fn colorize_git_command(args: Vec<&str>) -> String {
 }
 
 fn colorize_git_commit_command(args: Vec<&str>) -> String {
-    if let Some((cmd, rest)) = args.split_first() {
-        if cmd == &"-m" || cmd == &"--message" || cmd == &"-am" {
-            return format!(
-                "{} {}",
-                cmd.bright_blue(),
-                colorize_git_commit_message_command(rest.to_vec())
-            );
+    let mut messages = Vec::new();
+
+    let mut in_message = false;
+
+    for arg in args {
+        println!("{:?}", arg);
+        if arg == "-m" {
+            in_message = true;
+        } else if in_message {
+            in_message = false;
+            messages.push(format!(
+                "-m {}{}{}",
+                "\"".bright_black(),
+                replace_gitmoji_with_emoji(arg).green(),
+                "\"".bright_black()
+            ));
         }
-
-        if cmd.starts_with('-') {
-            return format!("{} {}", cmd.bright_blue(), rest.join(" "));
-        }
-
-        return format!("{} {}", cmd.magenta(), rest.join(" "));
     }
-    String::new()
-}
 
-fn colorize_git_commit_message_command(args: Vec<&str>) -> String {
-    let message = args.join(" ");
-    if let (Some(message_start), Some(message_end)) = (message.find('"'), message.rfind('"')) {
-        let message_content = &message[message_start + 1..message_end];
-        let message_colorized = replace_gitmoji_with_emoji(message_content).green();
-        let message_colorized_full = format!(
-            "{}{}{}",
-            &message[..message_start + 1],
-            message_colorized,
-            &message[message_end..]
-        );
-        return message_colorized_full;
-    }
-    String::new()
+    messages.join(" ")
 }
 
 pub fn replace_gitmoji_with_emoji(message: &str) -> String {
