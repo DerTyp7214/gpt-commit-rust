@@ -3,7 +3,7 @@ use git2::{DiffFormat, DiffOptions, Oid, Repository, StatusOptions};
 use normpath::{BasePathBuf, PathExt};
 use std::{path::Path, str};
 
-use crate::command_utils::run_commands;
+use crate::command_utils::{replace_gitmoji_with_emoji, run_commands};
 
 pub fn build_commands(
     commit_message: &String,
@@ -173,11 +173,7 @@ impl Git {
             .unwrap();
     }
 
-    pub fn commit(
-        self: &Self,
-        message: &String,
-        files: Option<&Vec<String>>,
-    ) -> Result<Oid, git2::Error> {
+    pub fn commit(self: &Self, message: &String) -> Result<Oid, git2::Error> {
         let mut index = self.repo.index().unwrap();
         let oid = index.write_tree().unwrap();
         let signature = self.repo.signature().unwrap();
@@ -195,8 +191,6 @@ impl Git {
 
         match commit_response {
             Ok(commit) => {
-                let new_tree = self.repo.find_tree(index.write_tree().unwrap()).unwrap();
-
                 let commit_hash = commit.to_string();
                 let commit_hash = commit_hash[..7].to_string();
                 let commit_message = message.trim();
@@ -205,33 +199,11 @@ impl Git {
                 let commit_message = commit_message.replace("\t", " ");
                 let commit_message = commit_message.replace("  ", " ");
 
-                let mut diff_options = git2::DiffOptions::new();
-                diff_options.include_ignored(false);
-                diff_options.include_untracked(true);
-                diff_options.include_unmodified(true);
-                diff_options.include_typechange(true);
-                diff_options.recurse_untracked_dirs(true);
-
-                let diff = self
-                    .repo
-                    .diff_tree_to_tree(Some(&tree), Some(&new_tree), Some(&mut diff_options))
-                    .unwrap();
-
-                let stats = diff.stats().unwrap();
-
-                let files_changed = stats.files_changed();
-                let insertions = stats.insertions();
-                let deletions = stats.deletions();
-
                 println!(
                     "[{} {}] {}",
                     self.repo.head().unwrap().shorthand().unwrap(),
                     commit_hash,
-                    commit_message
-                );
-                println!(
-                    "{} files changed, {} insertions(+), {} deletions(-)",
-                    files_changed, insertions, deletions
+                    replace_gitmoji_with_emoji(commit_message.as_str())
                 );
             }
             Err(err) => {

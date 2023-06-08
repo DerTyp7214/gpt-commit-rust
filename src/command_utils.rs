@@ -169,7 +169,7 @@ fn colorize_git_commit_message_command(args: Vec<&str>) -> String {
     String::new()
 }
 
-fn replace_gitmoji_with_emoji(message: &str) -> String {
+pub fn replace_gitmoji_with_emoji(message: &str) -> String {
     let gitmoji_regex = regex::Regex::new(r":[a-z0-9_]+:").unwrap();
     let mut replaced_message = message.to_owned();
 
