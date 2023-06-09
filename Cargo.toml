@@ -1,6 +1,6 @@
 [package]
 name = "gpt-commit-rust"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2021"
 
 [dependencies]
@@ -9,6 +9,7 @@ dotenv = "0.15.0"
 futures-util = "0.3.28"
 git2 = "0.17.2"
 indicatif = { version = "0.17.5", features = ["improved_unicode"] }
+inquire = { version = "0.6.2", features = ["editor"] }
 lazy_static = "1.4.0"
 normpath = "1.1.1"
 os-version = "0.2.0"

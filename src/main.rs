@@ -10,11 +10,13 @@ use std::{
     fs::{self, File},
     io::Write,
     path::Path,
+    vec,
 };
 
 use colored::Colorize;
 
 use gpt_api::query;
+use inquire::{Editor, Select, Text};
 
 use crate::{
     command_utils::{parse_command, parse_commands},
@@ -270,35 +272,124 @@ async fn main() {
         }
     };
 
+    run(&args, result, push, git);
+}
+
+fn run(args: &Vec<String>, result: String, push: bool, git: Git) {
     let command = build_commands(&result, push, &args);
 
     let parsed_command = parse_commands(&command, true);
 
-    println!("{}\n{}", "Commands:".bright_magenta(), parsed_command);
-    print!("\n{} {}: ", "Confirm".green(), "(Y/n)");
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input).unwrap();
-    println!("");
-    if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
-        git.add_old(Some(&args));
-        /*let commit_result = git.commit(&result);
+    println!("{}\n{}\n", "Commands:".bright_magenta(), parsed_command);
 
-        if commit_result.is_err() {
-            println!("{} {}", "Error:".red(), commit_result.unwrap_err());
-            std::process::exit(1);
-        }*/
-        git.commit_old(&result);
+    let mut prompt = Select::new("Action", vec!["Run", "Edit", "Abort"]);
+    prompt.starting_cursor = 0;
+    let prompt = prompt.prompt();
+    if prompt.is_err() {
+        print!("\n{} {}: ", "Confirm".green(), "(Y/n)");
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        println!("");
+        if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
+            git.add_old(Some(&args));
+            git.commit_old(&result);
 
-        if push {
-            println!("");
-            git.push();
+            if push {
+                println!("");
+                git.push();
+            }
+
+            std::process::exit(0);
+        } else if input.trim() == "n" || input.trim() == "N" {
+            println!("{}", "Aborted".red());
+            std::process::exit(0);
         }
+        println!("{}", "Invalid input".red());
+        std::process::exit(1);
+    }
 
-        std::process::exit(0);
-    } else if input.trim() == "n" || input.trim() == "N" {
+    let prompt = prompt.unwrap();
+
+    match prompt {
+        "Run" => {
+            git.add_old(Some(&args));
+            git.commit_old(&result);
+
+            if push {
+                println!("");
+                git.push();
+            }
+
+            std::process::exit(0);
+        }
+        "Edit" => {
+            let result = edit(result);
+            run(&args, result, push, git);
+        }
+        "Abort" => {
+            println!("{}", "Aborted".red());
+            std::process::exit(0);
+        }
+        _ => {
+            println!("{}", "Invalid input".red());
+            std::process::exit(1);
+        }
+    }
+}
+
+fn edit(result: String) -> String {
+    let mut lines = result
+        .split("\n")
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<&str>>();
+    println!(
+        "\n{}\n{}\n",
+        "Options:".magenta(),
+        &lines
+            .iter()
+            .enumerate()
+            .map(|(index, line)| { format!("{}: {}", (index + 1).to_string().yellow(), line) })
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
+    let mut options = vec!["Abort".to_owned()];
+    options.extend(
+        (1..=lines.len())
+            .map(|i| i.to_string())
+            .collect::<Vec<String>>(),
+    );
+    let prompt = Select::new("Line to edit", options).prompt();
+    if prompt.is_err() {
         println!("{}", "Aborted".red());
         std::process::exit(0);
     }
-    println!("{}", "Invalid input".red());
-    std::process::exit(1);
+    let prompt = prompt.unwrap();
+
+    if prompt == "Abort" {
+        println!("{}", "Aborted".red());
+        std::process::exit(0);
+    }
+
+    let prompt = prompt.parse::<usize>();
+    if prompt.is_err() {
+        println!("{}", "Invalid input".red());
+        std::process::exit(1);
+    }
+    let index = prompt.unwrap() - 1;
+    let line_to_edit = lines[index].to_owned();
+    let mut prompt = Text::new("Edit");
+    prompt.initial_value = Some(&line_to_edit);
+
+    let prompt = prompt.prompt();
+
+    if prompt.is_err() {
+        println!("{}", "Aborted".red());
+        std::process::exit(0);
+    }
+
+    let prompt = prompt.unwrap();
+
+    lines[index] = prompt.as_str();
+
+    lines.join("\n")
 }
