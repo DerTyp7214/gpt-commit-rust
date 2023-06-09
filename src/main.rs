@@ -16,7 +16,7 @@ use std::{
 use colored::Colorize;
 
 use gpt_api::query;
-use inquire::{Editor, Select, Text};
+use inquire::{Select, Text};
 
 use crate::{
     command_utils::{parse_command, parse_commands},
@@ -230,32 +230,8 @@ async fn main() {
             Err(err) => return println!("{} {}", "Error:".red(), err),
         }
 
-        print!("\n{} {}: ", "Commit".green(), "(Y/n)");
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).unwrap();
-        println!("");
-        if input.trim() == "y" || input.trim() == "" || input.trim() == "Y" {
-            git.add_old(Some(&args));
-            /*let commit_result = git.commit(&"Created README.md".to_owned());
-
-            if commit_result.is_err() {
-                println!("{} {}", "Error:".red(), commit_result.unwrap_err());
-                std::process::exit(1);
-            }*/
-            git.commit_old(&"Created README.md".to_owned());
-
-            if push {
-                println!("");
-                git.push();
-            }
-
-            std::process::exit(0);
-        } else if input.trim() == "n" || input.trim() == "N" {
-            println!("{}", "Aborted".red());
-            std::process::exit(0);
-        }
-        println!("{}", "Invalid input".red());
-        std::process::exit(1);
+        run(&args, "Created README.md".to_owned(), push, &git);
+        std::process::exit(0);
     }
 
     let loader = utils::Loader::new("Waiting for response from GPT-3");
@@ -272,10 +248,10 @@ async fn main() {
         }
     };
 
-    run(&args, result, push, git);
+    run(&args, result, push, &git);
 }
 
-fn run(args: &Vec<String>, result: String, push: bool, git: Git) {
+fn run(args: &Vec<String>, result: String, push: bool, git: &Git) {
     let command = build_commands(&result, push, &args);
 
     let parsed_command = parse_commands(&command, true);
