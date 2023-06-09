@@ -65,6 +65,11 @@ async fn main() {
         );
         println!(
             "{} {}",
+            "--no-ai, -n:".magenta(),
+            "Commits the changes without using GPT-3"
+        );
+        println!(
+            "{} {}",
             "--push, -p:".magenta(),
             "Pushes the changes to the remote repository after running the commands"
         );
@@ -234,6 +239,12 @@ async fn main() {
         std::process::exit(0);
     }
 
+    if args.contains(&"--no-ai".to_owned()) || args.contains(&"-n".to_owned()) {
+        let result = vec!["#Title", "##Body"].join("\n");
+        run(&args, result, push, &git);
+        return;
+    }
+
     let loader = utils::Loader::new("Waiting for response from GPT-3");
 
     let result = query(None, &git, args.clone()).await;
@@ -367,5 +378,10 @@ fn edit(result: String) -> String {
 
     lines[index] = prompt.as_str();
 
-    lines.join("\n")
+    lines
+        .iter()
+        .filter(|line| !line.is_empty())
+        .map(|line| line.to_owned())
+        .collect::<Vec<&str>>()
+        .join("\n")
 }
