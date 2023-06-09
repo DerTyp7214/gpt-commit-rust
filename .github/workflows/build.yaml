@@ -30,9 +30,11 @@ jobs:
       - name: Cache .cargo directory
         uses: actions/cache@v3
         with:
-          path: ~/.cargo
+          path: |
+            ~/.cargo
+            target
           key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          restore-keys: ${{ runner.os }}-cargo-${{ matrix.rust }}-
 
       - name: Set up Rust (Windows)
         if: matrix.os == 'windows-latest'
