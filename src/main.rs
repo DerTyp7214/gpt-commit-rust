@@ -30,6 +30,11 @@ async fn main() {
     dotenv::dotenv().ok();
 
     let args = std::env::args().collect::<Vec<String>>()[1..].to_vec();
+    let files = args
+        .iter()
+        .filter(|arg| !arg.starts_with("-"))
+        .map(|arg| arg.to_owned())
+        .collect::<Vec<String>>();
 
     if args.contains(&"--help".to_owned()) || args.contains(&"-h".to_owned()) {
         let usage_str = format!(
@@ -235,7 +240,12 @@ async fn main() {
             Err(err) => return println!("{} {}", "Error:".red(), err),
         }
 
-        run(&args, "Created README.md".to_owned(), push, &git);
+        run(
+            &vec!["README.md".to_owned()],
+            "Created README.md".to_owned(),
+            push,
+            &git,
+        );
         std::process::exit(0);
     }
 
@@ -259,11 +269,11 @@ async fn main() {
         }
     };
 
-    run(&args, result, push, &git);
+    run(&files, result, push, &git);
 }
 
-fn run(args: &Vec<String>, result: String, push: bool, git: &Git) {
-    let command = build_commands(&result, push, &args);
+fn run(files: &Vec<String>, result: String, push: bool, git: &Git) {
+    let command = build_commands(&result, push, &files);
 
     let parsed_command = parse_commands(&command, true);
 
@@ -278,7 +288,7 @@ fn run(args: &Vec<String>, result: String, push: bool, git: &Git) {
         std::io::stdin().read_line(&mut input).unwrap();
         println!("");
         if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
-            git.add_old(Some(&args));
+            git.add_old(Some(&files));
             git.commit_old(&result);
 
             if push {
@@ -299,7 +309,7 @@ fn run(args: &Vec<String>, result: String, push: bool, git: &Git) {
 
     match prompt {
         "Run" => {
-            git.add_old(Some(&args));
+            git.add_old(Some(&files));
             git.commit_old(&result);
 
             if push {
@@ -311,7 +321,7 @@ fn run(args: &Vec<String>, result: String, push: bool, git: &Git) {
         }
         "Edit" => {
             let result = edit(result);
-            run(&args, result, push, git);
+            run(&files, result, push, git);
         }
         "Abort" => {
             println!("{}", "Aborted".red());
