@@ -251,7 +251,7 @@ async fn main() {
 
     if args.contains(&"--no-ai".to_owned()) || args.contains(&"-n".to_owned()) {
         let result = vec!["#Title", "##Body"].join("\n");
-        run(&args, result, push, &git);
+        run(&files, result, push, &git);
         return;
     }
 
