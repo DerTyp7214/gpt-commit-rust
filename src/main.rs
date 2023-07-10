@@ -273,6 +273,17 @@ async fn main() {
 }
 
 fn run(files: &Vec<String>, result: String, push: bool, git: &Git) {
+    let result = result
+        .split("\n")
+        .map(|s| {
+            s.replace("Title:", "")
+                .replace("Body:", "")
+                .trim()
+                .to_owned()
+        })
+        .collect::<Vec<String>>()
+        .join("\n");
+
     let command = build_commands(&result, push, &files);
 
     let parsed_command = parse_commands(&command, true);

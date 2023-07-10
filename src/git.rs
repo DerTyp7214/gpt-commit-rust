@@ -27,7 +27,7 @@ pub fn build_commands(
             continue;
         }
         commit_command.push("-m".to_owned());
-        commit_command.push(msg.replace("Title: ", "").replace("Body: ", "").to_owned());
+        commit_command.push(msg.to_owned());
     }
 
     commands.push(commit_command);

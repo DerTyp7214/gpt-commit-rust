@@ -134,10 +134,7 @@ fn colorize_git_commit_command(args: Vec<&str>) -> String {
             messages.push(format!(
                 "-m {}{}{}",
                 "\"".bright_black(),
-                replace_gitmoji_with_emoji(arg)
-                    .replace("Title: ", "")
-                    .replace("Body: ", "")
-                    .green(),
+                replace_gitmoji_with_emoji(arg).green(),
                 "\"".bright_black()
             ));
         }
