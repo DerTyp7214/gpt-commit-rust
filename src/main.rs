@@ -273,13 +273,16 @@ async fn main() {
 }
 
 fn run(files: &Vec<String>, result: String, push: bool, git: &Git) {
+    let prefixes_to_remove = vec!["Title:", "Body:", "Summary:", "Gitmoji:", "feat:"];
+
     let result = result
         .split("\n")
         .map(|s| {
-            s.replace("Title:", "")
-                .replace("Body:", "")
-                .trim()
-                .to_owned()
+            let mut s = s.to_owned();
+            for prefix in &prefixes_to_remove {
+                s = s.replace(prefix, "").trim().to_owned();
+            }
+            s.to_owned()
         })
         .collect::<Vec<String>>()
         .join("\n");
