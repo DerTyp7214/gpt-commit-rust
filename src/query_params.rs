@@ -10,8 +10,8 @@ fn get_params() -> Vec<String> {
         "just the raw commit message, no explanation needed",
         "no need to explain the same thing in title and body",
         "no need for \"Explain what and why\" just the explanation",
-        "Template (Title, Body, Body Properties):",
-        "Title Template: Gitmoji, Summary, imperative",
+        "Template:",
+        "Title Template: One Gitmoji, Short Summary, imperative",
         "start upper case, don't end with a period, no more than 50 characters",
         "Body: Explain *what* and *why* (not *how*). Wrap at 72 characters.",
         "1. Separate subject from body with a blank line",
@@ -20,7 +20,8 @@ fn get_params() -> Vec<String> {
         "4. Do not end the subject line with a period",
         "5. Use the imperative mood in the subject line",
         "6. Wrap the body at 72 characters",
-        "7. Use the body to explain what and why vs. how"
+        "7. Use the body to explain what and why vs. how",
+        "8. No Co-authored-by lines",
     ];
 
     params.iter().map(|s| s.to_string()).collect()
@@ -46,7 +47,10 @@ pub fn build_query(git: &Git, files: Vec<String>) -> String {
         diff
     };
 
-    format!("{}\n\n{}\n\n{}", main, diff, status)
+    format!(
+        "{}\n\nGit-Diffs:\n{}\n\nGit-Status:\n{}",
+        main, diff, status
+    )
 }
 
 pub fn build_readme_query(git: &Git, files: Vec<String>) -> String {
