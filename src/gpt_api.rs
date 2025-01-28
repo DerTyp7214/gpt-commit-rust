@@ -10,7 +10,8 @@ use crate::utils;
 
 pub(crate) const PORT: i32 = 1234;
 pub(crate) const API_URL: &str = "http://localhost";
-pub(crate) const MODEL_NAME: &str = "qwen2.5-coder-14b-instruct";
+//pub(crate) const MODEL_NAME: &str = "qwen2.5-coder-14b-instruct";
+pub(crate) const MODEL_NAME: &str = "deepseek-coder-v2-lite-instruct";
 
 #[derive(Debug, Deserialize, Serialize)]
 struct OpenApiResponseBody {
