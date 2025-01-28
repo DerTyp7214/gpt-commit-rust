@@ -15,7 +15,7 @@ fn get_params() -> Vec<String> {
         "3. Use imperative in the subject line",
         "4. Wrap the body at 72 characters",
         "5. Use the body to explain what and why vs. how",
-        "6. Do not use markdown headings",
+        "6. Do not use markdown headings or code blocks",
     ];
 
     params.iter().map(|s| s.to_string()).collect()

@@ -13,6 +13,7 @@ use std::{
 use indicatif::{ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use crate::gpt_api::MODEL_NAME;
 
 const FRAMES: [&str; 12] = [
     "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛",
@@ -56,11 +57,12 @@ pub fn terminal_width() -> usize {
 pub struct Config {
     pub api_key: Option<String>,
     pub port: Option<i32>,
+    pub model_name: Option<String>,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self { api_key: None, port: None }
+        Self { api_key: None, port: None, model_name: None }
     }
 }
 
@@ -96,6 +98,10 @@ impl Config {
         self.port = port;
     }
 
+    pub fn set_model_name(&mut self, model_name: String) {
+        self.model_name = Some(model_name);
+    }
+
     pub fn get_api_key(&self) -> String {
         self.api_key.to_owned().unwrap_or(
             std::env::var("CHAT_GPT_TOKEN")
@@ -106,6 +112,10 @@ impl Config {
 
     pub fn get_port(&self, fallback: i32) -> i32 {
         self.port.unwrap_or(fallback)
+    }
+
+    pub fn get_model_name(&self) -> String {
+        self.model_name.to_owned().unwrap_or(MODEL_NAME.to_string())
     }
 }
 

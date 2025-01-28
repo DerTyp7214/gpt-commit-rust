@@ -98,6 +98,16 @@ async fn main() {
             "--clear-port:".magenta(),
             "Clears the port from the config file"
         );
+        println!(
+            "{} {}",
+            "--model-name".magenta(),
+            "Sets the model name to use for the api"
+        );
+        println!(
+            "{} {}",
+            "--clear-model-name:".magenta(),
+            "Clears the model name from the config file"
+        );
         return;
     }
 
@@ -202,6 +212,25 @@ async fn main() {
         config.save();
 
         println!("{}", "Port cleared".green());
+        return;
+    }
+
+    if args.contains(&"--model-name".to_owned()) {
+        let pos = args.iter().position(|s| s == "--model-name").unwrap();
+        if pos + 1 >= args.len() {
+            let model_name = args[pos + 1].clone();
+            if model_name.is_empty() {
+                println!("{}", "No model name set".yellow());
+            } else {
+                println!("{}: {}", "Model name".bright_magenta(), model_name);
+            }
+            return;
+        }
+        let model_name = args[pos + 1].clone();
+        config.set_model_name(model_name);
+        config.save();
+
+        println!("{}", "Model name cleared".green());
         return;
     }
 

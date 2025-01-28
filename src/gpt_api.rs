@@ -10,7 +10,6 @@ use crate::utils;
 
 pub(crate) const PORT: i32 = 1234;
 pub(crate) const API_URL: &str = "http://localhost";
-//pub(crate) const MODEL_NAME: &str = "qwen2.5-coder-14b-instruct";
 pub(crate) const MODEL_NAME: &str = "deepseek-coder-v2-lite-instruct";
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -121,7 +120,7 @@ pub async fn query(
     }
 
     let body = OpenApiRequestBody {
-        model: MODEL_NAME.to_owned(),
+        model: config.get_model_name(),
         messages,
         temperature: 0.9,
         max_tokens: 250,
@@ -168,6 +167,8 @@ pub async fn query(
 }
 
 pub async fn init(git: &Git, files: Vec<String>) -> Result<String, String> {
+    let config = utils::get_config();
+
     let mut messages: Vec<OpenApiMessage> = Vec::new();
     messages.push(OpenApiMessage {
         role: "system".to_owned(),
@@ -175,7 +176,7 @@ pub async fn init(git: &Git, files: Vec<String>) -> Result<String, String> {
     });
 
     let body = OpenApiRequestBody {
-        model: MODEL_NAME.to_owned(),
+        model: config.get_model_name(),
         messages,
         temperature: 0.9,
         max_tokens: 1500,
@@ -190,8 +191,10 @@ pub async fn init(git: &Git, files: Vec<String>) -> Result<String, String> {
         format!("Bearer {}", config.get_api_key()).parse().unwrap(),
     );
 
+    let port = config.get_port(PORT);
+
     let result = post_api_call(
-        format!("{API_URL}/v1/chat/completions").as_str(),
+        format!("{API_URL}:{port}/v1/chat/completions").as_str(),
         serde_json::to_string(&body).unwrap().as_str(),
         Some(headers),
     )
