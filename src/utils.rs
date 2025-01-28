@@ -55,11 +55,12 @@ pub fn terminal_width() -> usize {
 #[derive(Deserialize, Serialize)]
 pub struct Config {
     pub api_key: Option<String>,
+    pub port: Option<i32>,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Self { api_key: None }
+        Self { api_key: None, port: None }
     }
 }
 
@@ -91,12 +92,20 @@ impl Config {
         self.api_key = Some(api_key);
     }
 
+    pub fn set_port(&mut self, port: Option<i32>) {
+        self.port = port;
+    }
+
     pub fn get_api_key(&self) -> String {
         self.api_key.to_owned().unwrap_or(
             std::env::var("CHAT_GPT_TOKEN")
                 .unwrap_or_else(|_| "".to_owned())
                 .to_owned(),
         )
+    }
+
+    pub fn get_port(&self, fallback: i32) -> i32 {
+        self.port.unwrap_or(fallback)
     }
 }
 

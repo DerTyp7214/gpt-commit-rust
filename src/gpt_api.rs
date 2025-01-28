@@ -1,11 +1,16 @@
+use std::borrow::ToOwned;
 use colored::Colorize;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::git::Git;
-use crate::query_params::{build_query, build_readme_query};
+use crate::query_params::{build_initial_message, build_query, build_readme_query};
 use crate::utils;
+
+pub(crate) const PORT: i32 = 1234;
+pub(crate) const API_URL: &str = "http://localhost";
+pub(crate) const MODEL_NAME: &str = "qwen2.5-coder-14b-instruct";
 
 #[derive(Debug, Deserialize, Serialize)]
 struct OpenApiResponseBody {
@@ -98,6 +103,10 @@ pub async fn query(
 
     let mut messages: Vec<OpenApiMessage> = Vec::new();
     messages.push(OpenApiMessage {
+        role: "system".to_owned(),
+        content: build_initial_message().to_owned(),
+    });
+    messages.push(OpenApiMessage {
         role: "user".to_owned(),
         content: build_query(git, files).to_owned(),
     });
@@ -109,11 +118,12 @@ pub async fn query(
             });
         }
     }
+
     let body = OpenApiRequestBody {
-        model: "gpt-3.5-turbo".to_owned(),
+        model: MODEL_NAME.to_owned(),
         messages,
         temperature: 0.9,
-        max_tokens: 150,
+        max_tokens: 250,
     };
 
     let mut headers = HeaderMap::new();
@@ -122,8 +132,10 @@ pub async fn query(
         format!("Bearer {}", config.get_api_key()).parse().unwrap(),
     );
 
+    let port = config.get_port(PORT);
+
     let result = post_api_call(
-        "https://api.openai.com/v1/chat/completions",
+        format!("{API_URL}:{port}/v1/chat/completions").as_str(),
         serde_json::to_string(&body).unwrap().as_str(),
         Some(headers),
     )
@@ -157,12 +169,12 @@ pub async fn query(
 pub async fn init(git: &Git, files: Vec<String>) -> Result<String, String> {
     let mut messages: Vec<OpenApiMessage> = Vec::new();
     messages.push(OpenApiMessage {
-        role: "user".to_owned(),
+        role: "system".to_owned(),
         content: build_readme_query(git, files),
     });
 
     let body = OpenApiRequestBody {
-        model: "gpt-3.5-turbo".to_owned(),
+        model: MODEL_NAME.to_owned(),
         messages,
         temperature: 0.9,
         max_tokens: 1500,
@@ -178,7 +190,7 @@ pub async fn init(git: &Git, files: Vec<String>) -> Result<String, String> {
     );
 
     let result = post_api_call(
-        "https://api.openai.com/v1/chat/completions",
+        format!("{API_URL}/v1/chat/completions").as_str(),
         serde_json::to_string(&body).unwrap().as_str(),
         Some(headers),
     )

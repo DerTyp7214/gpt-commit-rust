@@ -6,22 +6,16 @@ use crate::{git::Git, os_info::get_os_info};
 
 fn get_params() -> Vec<String> {
     let params = vec![
-        "give me a description of these changes. linebreaks between the title and body (just 2 lines, title and body)",
-        "just the raw commit message, no explanation needed",
-        "no need to explain the same thing in title and body",
-        "no need for \"Explain what and why\" just the explanation",
-        "Template:",
-        "Title Template: One Gitmoji, Short Summary, imperative",
-        "start upper case, don't end with a period, no more than 50 characters",
-        "Body: Explain *what* and *why* (not *how*). Wrap at 72 characters.",
-        "1. Separate subject from body with a blank line",
-        "2. Limit the subject line to 50 characters",
-        "3. Capitalize the subject line",
-        "4. Do not end the subject line with a period",
-        "5. Use the imperative mood in the subject line",
-        "6. Wrap the body at 72 characters",
-        "7. Use the body to explain what and why vs. how",
-        "8. No Co-authored-by lines",
+        "You write an informative commit message.",
+        "You write a commit subject and body, separated with a new line.",
+        "You just reply with 2 lines in total.",
+        "Subject line should include One Gitmoji, A Short Summary, using imperative, start with upper case, doesn't end with a period and should not be longer than 50 characters",
+        "1. Limit the subject line to 50 characters",
+        "2. Use one Gitmoji at the start of the subject line",
+        "3. Use imperative in the subject line",
+        "4. Wrap the body at 72 characters",
+        "5. Use the body to explain what and why vs. how",
+        "6. Do not use markdown headings",
     ];
 
     params.iter().map(|s| s.to_string()).collect()
@@ -33,23 +27,23 @@ fn get_readme_params() -> Vec<String> {
     params.iter().map(|s| s.to_string()).collect()
 }
 
-pub fn build_query(git: &Git, files: Vec<String>) -> String {
+pub fn build_initial_message() -> String {
     let params = get_params().join("\n");
     let os_info = get_os_info();
+
+    format!(
+        "# The system information:\n{}\n\n# Your instructions:\n{}",
+        os_info, params
+    )
+}
+
+pub fn build_query(git: &Git, files: Vec<String>) -> String {
     let diff = git.clone().get_diff(Some(files)).unwrap();
     let status = git.clone().get_status().unwrap();
 
-    let main = format!("{}\n\n{}\n\n", os_info, params,);
-
-    let diff = if diff.len() > 4096 - main.len() - status.len() {
-        diff[..4096 - main.len() - status.len()].to_owned()
-    } else {
-        diff
-    };
-
     format!(
-        "{}\n\nGit-Diffs:\n{}\n\nGit-Status:\n{}",
-        main, diff, status
+        "# Git-Status:\n{}\n\n# Git-Diffs, everything from here is the diff:\n{}",
+        status, diff
     )
 }
 

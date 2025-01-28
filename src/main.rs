@@ -15,15 +15,15 @@ use std::{
 
 use colored::Colorize;
 
-use gpt_api::query;
-use inquire::{Select, Text};
-
+use crate::gpt_api::PORT;
 use crate::{
     command_utils::{parse_command, parse_commands},
     git::{build_commands, Git},
     gpt_api::init,
     utils::{check_for_update, get_executable_name},
 };
+use gpt_api::{query, MODEL_NAME};
+use inquire::{Select, Text};
 
 #[tokio::main]
 async fn main() {
@@ -71,7 +71,7 @@ async fn main() {
         println!(
             "{} {}",
             "--no-ai, -n:".magenta(),
-            "Commits the changes without using GPT-3"
+            format!("Commits the changes without using {MODEL_NAME}")
         );
         println!(
             "{} {}",
@@ -81,12 +81,22 @@ async fn main() {
         println!(
             "{} {}",
             "--api-key:".magenta(),
-            "Sets the API key to use for GPT-3. You can also set the API key in the .env file"
+            format!("Sets the API key to use for {MODEL_NAME}. You can also set the API key in the .env file")
         );
         println!(
             "{} {}",
             "--clear-api-key:".magenta(),
             "Clears the API key from the config file"
+        );
+        println!(
+            "{} {}",
+            "--port:".magenta(),
+            format!("Sets the port to use for {MODEL_NAME} and lms server.")
+        );
+        println!(
+            "{} {}",
+            "--clear-port:".magenta(),
+            "Clears the port from the config file"
         );
         return;
     }
@@ -155,7 +165,7 @@ async fn main() {
 
         println!("{}", "API key set".green());
         return;
-    } else if config.get_api_key().is_empty() {
+    } else if config.get_api_key().is_empty()  {
         println!("{}", "No API key set. Set API key first!".yellow());
         return;
     }
@@ -165,6 +175,33 @@ async fn main() {
         config.save();
 
         println!("{}", "API key cleared".green());
+        return;
+    }
+
+    if args.contains(&"--port".to_owned()) {
+        let pos = args.iter().position(|s| s == "--port").unwrap();
+        if pos + 1 >= args.len() {
+            let port = config.get_port(PORT);
+            if port == PORT {
+                println!("{}", "No port set".yellow());
+            } else {
+                println!("{}: {}", "Port".bright_magenta(), port);
+            }
+            return;
+        }
+        let port = args[pos + 1].clone();
+        config.set_port(Some(port.parse::<i32>().unwrap()));
+        config.save();
+
+        println!("{}", "Port set".green());
+        return;
+    }
+
+    if args.contains(&"--clear-port".to_owned()) {
+        config.set_port(None);
+        config.save();
+
+        println!("{}", "Port cleared".green());
         return;
     }
 
@@ -211,7 +248,7 @@ async fn main() {
         }
         let files = args[pos + 1..].to_vec();
 
-        let loader = utils::Loader::new("Waiting for response from GPT-3");
+        let loader = utils::Loader::new(format!("Waiting for response from {MODEL_NAME}").as_str());
 
         let result = init(&git, files).await;
 
@@ -255,7 +292,7 @@ async fn main() {
         return;
     }
 
-    let loader = utils::Loader::new("Waiting for response from GPT-3");
+    let loader = utils::Loader::new(format!("Waiting for response from {MODEL_NAME}").as_str());
 
     let result = query(None, &git, args.clone()).await;
 
@@ -300,7 +337,7 @@ fn run(files: &Vec<String>, result: String, push: bool, git: &Git) {
         print!("\n{} {}: ", "Confirm".green(), "(Y/n)");
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
-        println!("");
+        println!();
         if input.trim() == "y" || input.trim() == "Y" || input.trim() == "" {
             git.add_old(Some(&files));
             git.commit_old(&result);
